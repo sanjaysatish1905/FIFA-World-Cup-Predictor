@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🏆 FIFA Office Predictor 2026</title>
+<title>🏆 FIFA WC 2026 Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -12,7 +14,7 @@
   --text:#f1f5f9;--muted:#64748b;--border:rgba(255,255,255,0.08);
   --radius:14px;--shadow:0 4px 24px rgba(0,0,0,0.5);
 }
-body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',Arial,sans-serif;min-height:100dvh;padding-bottom:72px;font-size:15px}
+body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF DIN',Arial,sans-serif;min-height:100dvh;padding-bottom:72px;font-size:15px}
 
 /* HEADER */
 .hdr{background:linear-gradient(135deg,#0f172a,#1e3a5f);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border)}
@@ -146,7 +148,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
 <body>
 
 <header class="hdr">
-  <div class="hdr-title">🏆 FIFA Office Predictor 2026</div>
+  <div class="hdr-title">🏆 FIFA WC 2026 Predictor</div>
   <button class="user-chip" id="userChip" onclick="openUserModal()">
     <span id="chipName">Sign In</span>
   </button>
@@ -156,10 +158,9 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
 <div id="pg-home" class="page active">
   <div class="hero">
     <h1>⚽ World Cup 2026</h1>
-    <p>Predict matches · Score points · Own the office</p>
+    <p>Predict matches · Score points · Start Bragging</p>
     <div class="stat-row">
       <div class="stat-box"><div class="num" id="sPlayers">0</div><div class="lbl">Players</div></div>
-      <div class="stat-box"><div class="num" id="sToday">0</div><div class="lbl">Today</div></div>
       <div class="stat-box"><div class="num" id="sPreds">0</div><div class="lbl">Predictions</div></div>
     </div>
     <button class="btn btn-primary" onclick="nav('predict')">⚡ Predict Now</button>
@@ -171,7 +172,7 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
   </div>
 
   <div class="shdr" style="margin-top:16px">
-    <span>Today's Matches</span>
+    <span>Upcoming Matches</span>
     <span id="todayCnt" style="color:var(--accent);font-size:13px;text-transform:none;font-weight:400"></span>
   </div>
   <div class="card" id="todayList">
@@ -287,9 +288,12 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
     <h3>👋 Select Your Name</h3>
     <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Choose your name to submit predictions</p>
     <div id="userPickList"></div>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <input class="minput" id="newNameIn" placeholder="Or type your name to add..." style="margin:0;flex:1" onkeydown="if(event.key==='Enter')createLogin()">
-      <button class="btn btn-sm btn-green" onclick="createLogin()" style="padding:12px 16px;margin-top:0">Add</button>
+    <div style="margin-top:10px">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input class="minput" id="newNameIn" placeholder="Your name..." style="margin:0;flex:1" onkeydown="if(event.key==='Enter')document.getElementById('newPinIn').focus()">
+        <input class="minput" type="password" inputmode="numeric" maxlength="4" id="newPinIn" placeholder="PIN" style="margin:0;width:72px" onkeydown="if(event.key==='Enter')createLogin()">
+      </div>
+      <button class="btn btn-sm btn-green" onclick="createLogin()" style="width:100%;padding:12px;margin-top:0">Add Player</button>
     </div>
     <button class="btn btn-ghost" style="width:100%;margin-top:10px" onclick="closeUserModal()">Cancel</button>
   </div>
@@ -468,7 +472,12 @@ function allMatches(){ return [...MATCHES, ...DB.custom]; }
 const now=()=>new Date();
 
 function isLocked(m){
-  return now()>=new Date(parseIST(m.ist).getTime()-60*60*1000);
+  return now()>=new Date(parseIST(m.ist).getTime()-10*60*1000);
+}
+
+function isNext48h(m){
+  const k=parseIST(m.ist),n=now();
+  return k>n && k<=new Date(n.getTime()+48*60*60*1000);
 }
 
 function isNext24h(m){
@@ -528,9 +537,8 @@ function calcLB(){
 // ═══════════════════════════════════════════════
 function renderHome(){
   const lb=calcLB(),users=getUsers(),preds=getPreds();
-  const todayM=allMatches().filter(isTodayIST);
+  const todayM=allMatches().filter(m=>isNext48h(m));
   document.getElementById('sPlayers').textContent=users.length;
-  document.getElementById('sToday').textContent=todayM.length;
   document.getElementById('sPreds').textContent=preds.length;
   document.getElementById('todayCnt').textContent=todayM.length+' match'+(todayM.length!==1?'es':'');
 
@@ -695,7 +703,7 @@ function renderPlayers(){
 // ═══════════════════════════════════════════════
 //  ACTIONS
 // ═══════════════════════════════════════════════
-let curPage='home', lbSort='pts', adminOpen=false;
+let curPage='home', lbSort='pts', adminOpen=false, _pinTarget=null;
 
 function nav(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
@@ -835,12 +843,14 @@ async function adminAddUser(){
   const name=prompt('Player name:');
   if(!name?.trim())return;
   if(DB.users.find(u=>u.name.toLowerCase()===name.trim().toLowerCase())){toast('Name already exists','err');return;}
+  const pin=prompt('Set a 4-digit PIN for '+name.trim()+':');
+  if(!pin?.trim()||pin.trim().length<4){toast('PIN must be 4 digits','err');return;}
   const id='U'+Date.now();
-  DB.users.push({id,name:name.trim()});
+  DB.users.push({id,name:name.trim(),pin:pin.trim()});
   renderPlayers();
   toast('Adding…','');
   try {
-    await apiCall({action:'addUser',id,name:name.trim()});
+    await apiCall({action:'addUser',id,name:name.trim(),pin:pin.trim()});
     toast(name.trim()+' added ✓','ok');
   } catch(e) {
     toast('Save failed','err');
@@ -884,21 +894,54 @@ async function changePw(){
 //  USER MODAL
 // ═══════════════════════════════════════════════
 function openUserModal(){
+  _pinTarget=null;
+  renderPickList();
+  document.getElementById('userModal').classList.add('open');
+}
+
+function renderPickList(){
   const users=getUsers(),me=getMe(),lb=calcLB();
+  if(_pinTarget){
+    const u=DB.users.find(x=>x.id===_pinTarget);
+    document.getElementById('userPickList').innerHTML=`
+      <button onclick="_pinTarget=null;renderPickList()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;margin-bottom:10px;padding:0">← Back</button>
+      <div style="font-weight:600;margin-bottom:12px">Enter PIN for ${u.name}</div>
+      <input class="minput" type="password" inputmode="numeric" maxlength="4" id="pinIn" placeholder="4-digit PIN" onkeydown="if(event.key==='Enter')confirmPin('${u.id}')">
+      <button class="btn btn-primary" style="margin-top:0" onclick="confirmPin('${u.id}')">Sign In</button>`;
+    setTimeout(()=>document.getElementById('pinIn')?.focus(),80);
+    return;
+  }
   document.getElementById('userPickList').innerHTML=users.length
     ? users.map(u=>{
         const e=lb.find(x=>x.id===u.id);
         const active=me?.id===u.id;
-        return`<div onclick="selectUser('${u.id}')" style="display:flex;align-items:center;padding:10px;border-radius:8px;cursor:pointer;background:${active?'rgba(59,130,246,0.12)':'transparent'};margin-bottom:4px">
+        return`<div onclick="showPin('${u.id}')" style="display:flex;align-items:center;padding:10px;border-radius:8px;cursor:pointer;background:${active?'rgba(59,130,246,0.12)':'transparent'};margin-bottom:4px">
           <div style="flex:1;font-weight:600">${active?'✓ ':''}${u.name}</div>
-          <div style="font-size:12px;color:var(--muted)">${e?.pts||0} pts</div>
+          <div style="font-size:12px;color:var(--muted)">${e?.pts||0} pts · 🔒</div>
         </div>`;
       }).join('')
     : '<div style="color:var(--muted);font-size:13px;padding:8px 0">No players yet — add your name below</div>';
-  document.getElementById('userModal').classList.add('open');
 }
 
-function closeUserModal(){document.getElementById('userModal').classList.remove('open');}
+function showPin(id){_pinTarget=id;renderPickList();}
+
+function confirmPin(id){
+  const u=DB.users.find(x=>x.id===id);
+  const entered=document.getElementById('pinIn').value;
+  if(!entered||entered.length<4){toast('Enter your 4-digit PIN','err');return;}
+  if(!u.pin){
+    // First login — set PIN now
+    u.pin=entered;
+    apiCall({action:'setPin',id,pin:entered}).catch(()=>{});
+    selectUser(id);
+    toast('PIN set! Signed in ✓','ok');
+    return;
+  }
+  if(String(u.pin)===String(entered)){selectUser(id);}
+  else{toast('Wrong PIN','err');document.getElementById('pinIn').value='';}
+}
+
+function closeUserModal(){document.getElementById('userModal').classList.remove('open');_pinTarget=null;}
 
 function selectUser(id){
   localStorage.setItem('wc_uid',id);closeUserModal();updateChip();
@@ -908,21 +951,26 @@ function selectUser(id){
 
 async function createLogin(){
   const name=document.getElementById('newNameIn').value.trim();
-  if(!name)return;
+  const pin=document.getElementById('newPinIn').value.trim();
+  if(!name){toast('Enter your name','err');return;}
+  if(!pin||pin.length<4){toast('Enter a 4-digit PIN','err');return;}
   const existing=DB.users.find(u=>u.name.toLowerCase()===name.toLowerCase());
-  if(existing){selectUser(existing.id);document.getElementById('newNameIn').value='';return;}
+  if(existing){
+    document.getElementById('newNameIn').value='';
+    document.getElementById('newPinIn').value='';
+    showPin(existing.id);
+    return;
+  }
   const id='U'+Date.now();
-  DB.users.push({id,name});
+  DB.users.push({id,name,pin});
   localStorage.setItem('wc_uid',id);
   document.getElementById('newNameIn').value='';
+  document.getElementById('newPinIn').value='';
   closeUserModal();updateChip();
   toast('Welcome, '+name+'!','ok');
   if(curPage==='predict')renderPredict();
-  try {
-    await apiCall({action:'addUser',id,name});
-  } catch(e) {
-    toast('Profile save failed – check connection','err');
-  }
+  try{await apiCall({action:'addUser',id,name,pin});}
+  catch(e){toast('Profile save failed – check connection','err');}
 }
 
 function updateChip(){
