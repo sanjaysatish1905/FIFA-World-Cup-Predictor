@@ -1016,21 +1016,25 @@ function onUserSelect(){
   setTimeout(()=>document.getElementById('pinIn').focus(),80);
 }
 
-function confirmPin(){
+async function confirmPin(){
   const id=document.getElementById('userSelect').value;
   if(!id){toast('Select your name first','err');return;}
-  const u=DB.users.find(x=>x.id===id);
   const entered=document.getElementById('pinIn').value;
   if(!entered||entered.length<4){toast('Enter your 4-digit PIN','err');return;}
-  if(!u.pin){
-    u.pin=entered;
-    apiCall({action:'setPin',id,pin:entered}).catch(()=>{});
-    selectUser(id);
-    toast('PIN set! Signed in ✓','ok');
-    return;
-  }
-  if(String(u.pin)===String(entered)){selectUser(id);}
-  else{toast('Wrong PIN','err');document.getElementById('pinIn').value='';document.getElementById('pinIn').focus();}
+  try{
+    const r=await apiCall({action:'verifyPin',id,pin:entered});
+    if(r.ok){
+      if(r.firstTime){
+        await apiCall({action:'setPin',id,pin:entered}).catch(()=>{});
+        toast('PIN set! Signed in ✓','ok');
+      }
+      selectUser(id);
+    }else{
+      toast('Wrong PIN','err');
+      document.getElementById('pinIn').value='';
+      document.getElementById('pinIn').focus();
+    }
+  }catch(e){toast('Error verifying PIN','err');}
 }
 
 function closeUserModal(){document.getElementById('userModal').classList.remove('open');_pinTarget=null;}
@@ -1050,7 +1054,8 @@ async function createLogin(){
   if(existing){
     document.getElementById('newNameIn').value='';
     document.getElementById('newPinIn').value='';
-    showPin(existing.id);
+    document.getElementById('userSelect').value=existing.id;
+    onUserSelect();
     return;
   }
   const id='U'+Date.now();
