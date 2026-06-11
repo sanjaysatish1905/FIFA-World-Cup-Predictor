@@ -210,6 +210,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
   <div id="recentList"></div>
 </div>
 
+<!-- PICKS -->
+<div id="pg-picks" class="page">
+  <div class="shdr"><span>🗳️ Predictions</span><span style="text-transform:none;font-weight:400;font-size:12px;color:var(--muted)">Revealed after lock</span></div>
+  <div id="picksList"></div>
+</div>
+
 <!-- LEADERBOARD -->
 <div id="pg-leaderboard" class="page">
   <div class="shdr">🏆 Leaderboard</div>
@@ -296,6 +302,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
 <nav class="bnav">
   <button class="nbtn active" onclick="nav('home')" id="nb-home"><span class="ico">🏠</span>Home</button>
   <button class="nbtn" onclick="nav('predict')" id="nb-predict"><span class="ico">⚽</span>Predict</button>
+  <button class="nbtn" onclick="nav('picks')" id="nb-picks"><span class="ico">🗳️</span>Picks</button>
   <button class="nbtn" onclick="nav('leaderboard')" id="nb-leaderboard"><span class="ico">📊</span>Board</button>
   <button class="nbtn" onclick="nav('admin')" id="nb-admin"><span class="ico">⚙️</span>Admin</button>
 </nav>
@@ -432,7 +439,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHQ-UvPvyhIHgN3tYbS
 // ═══════════════════════════════════════════════
 //  IN-MEMORY DATABASE (synced from Google Sheets)
 // ═══════════════════════════════════════════════
-let DB = {users:[], preds:[], results:{}, custom:[], adminPw:'admin2026'};
+let DB = {users:[], preds:[], results:{}, custom:[]};
 let _refreshTimer = null;
 
 async function apiCall(params) {
@@ -454,7 +461,6 @@ async function loadAll(silent) {
     DB.custom = (data.custom || []).map(c => ({id:String(c.id), group:String(c.group), t1:String(c.t1), t2:String(c.t2), ist:String(c.ist)}));
     DB.results = {};
     (data.results || []).forEach(r => { DB.results[String(r.mid)] = {s1:Number(r.s1), s2:Number(r.s2)}; });
-    DB.adminPw = String(data.adminPw || 'admin2026');
     return true;
   } catch(e) {
     if (!silent) toast('Failed to load: ' + e.message, 'err');
@@ -691,6 +697,47 @@ function renderLB(sort='pts'){
   }).join('');
 }
 
+function renderPicks(){
+  const el=document.getElementById('picksList');
+  const locked=[...allMatches()].filter(isLocked).sort((a,b)=>parseIST(b.ist)-parseIST(a.ist));
+  if(!locked.length){
+    el.innerHTML='<div class="empty"><div class="eico">🔒</div><p>No locked matches yet</p><p style="font-size:12px;margin-top:6px;color:var(--muted)">Predictions are revealed 10 mins before kick-off</p></div>';
+    return;
+  }
+  const preds=getPreds(),res=getResults(),users=getUsers(),me=getMe();
+  el.innerHTML=locked.map(m=>{
+    const result=res[m.id];
+    const rows=users.map(u=>{
+      const p=preds.find(x=>x.uid===u.id&&x.mid===m.id);
+      const pts=p&&result!=null?calcPts(p,result):null;
+      const isMe=me?.id===u.id;
+      let ptsBadge='';
+      if(pts!==null){
+        const c=pts===5?'var(--green)':pts>=3?'var(--gold)':'var(--muted)';
+        ptsBadge=`<span style="color:${c};font-weight:700;min-width:36px;text-align:right">${pts>0?'+':''}${pts}</span>`;
+      }
+      return`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <span style="font-weight:${isMe?'700':'400'};color:${isMe?'var(--accent)':'var(--text)'}">${isMe?'▶ ':''}${u.name}</span>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-weight:600;color:${p?'var(--text)':'var(--muted)'}">${p?`${p.s1}–${p.s2}`:'—'}</span>
+          ${ptsBadge}
+        </div>
+      </div>`;
+    }).join('');
+    return`<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="gbadge">${m.group}</span>
+          <span style="font-size:13px;font-weight:700">${m.t1} vs ${m.t2}</span>
+        </div>
+        <span class="mtime">${fmtDate(m)} ${fmtTime(m)}</span>
+      </div>
+      ${result!=null?`<div class="result-box" style="margin-bottom:10px">⚽ Final: ${m.t1} <strong>${result.s1}–${result.s2}</strong> ${m.t2}</div>`:''}
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
 function renderAdminResults(){
   const sorted=[...allMatches()].sort((a,b)=>parseIST(a.ist)-parseIST(b.ist));
   const res=getResults();
@@ -757,6 +804,7 @@ function nav(p){
   if(p==='home')renderHome();
   if(p==='predict')renderPredict();
   if(p==='leaderboard')renderLB(lbSort);
+  if(p==='picks')renderPicks();
   if(p==='admin')renderAdmin();
 }
 
@@ -771,10 +819,15 @@ function renderAdmin(){
   }
 }
 
-function adminLogin(){
+async function adminLogin(){
   const pw=document.getElementById('adminPwIn').value;
-  if(pw===DB.adminPw){adminOpen=true;document.getElementById('adminPwIn').value='';renderAdmin();toast('Admin unlocked','ok');}
-  else{toast('Wrong password','err');document.getElementById('adminPwIn').value='';}
+  if(!pw)return;
+  document.getElementById('adminPwIn').value='';
+  try{
+    const r=await apiCall({action:'checkAdminPw',pw});
+    if(r.ok){adminOpen=true;renderAdmin();toast('Admin unlocked','ok');}
+    else{toast('Wrong password','err');}
+  }catch(e){toast('Error checking password','err');}
 }
 
 function adminLogout(){adminOpen=false;renderAdmin();}
@@ -926,7 +979,6 @@ async function changePw(){
   document.getElementById('newPwIn').value='';
   try {
     await apiCall({action:'setPw',pw});
-    DB.adminPw=pw;
     toast('Password updated ✓','ok');
   } catch(e) {
     toast('Failed to update password','err');
