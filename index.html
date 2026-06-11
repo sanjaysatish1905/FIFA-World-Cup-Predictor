@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🏆 FIFA WC 2026 Predictor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap')" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -156,14 +156,32 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
 
 <!-- HOME -->
 <div id="pg-home" class="page active">
-  <div class="hero">
-    <h1>⚽ World Cup 2026</h1>
-    <p>Predict matches · Score points · Start Bragging</p>
-    <div class="stat-row">
-      <div class="stat-box"><div class="num" id="sPlayers">0</div><div class="lbl">Players</div></div>
-      <div class="stat-box"><div class="num" id="sPreds">0</div><div class="lbl">Predictions</div></div>
+  <div style="display:flex;gap:12px;margin-bottom:12px;align-items:stretch">
+
+    <!-- Players card -->
+    <div style="background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);border-radius:var(--radius);padding:20px 16px;text-align:center;border:1px solid rgba(59,130,246,0.25);display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:110px">
+      <div style="font-size:42px;font-weight:800;color:var(--accent);line-height:1" id="sPlayers">0</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Players</div>
+      <button class="btn btn-primary" style="margin-top:14px;padding:10px 14px;font-size:13px" onclick="nav('predict')">⚡ Predict</button>
     </div>
-    <button class="btn btn-primary" onclick="nav('predict')">⚡ Predict Now</button>
+
+    <!-- How to play card -->
+    <div style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;font-size:12px">
+      <div style="font-weight:700;color:var(--text);margin-bottom:10px;font-size:13px">📖 How to Play</div>
+      <div style="color:var(--muted);line-height:1.8">
+        <div>⚽ Predict the score of each match</div>
+        <div>🔒 Predictions lock <strong style="color:var(--text)">10 mins</strong> before kick-off</div>
+        <div>✏️ Edit anytime before the predictions lock</div>
+      </div>
+      <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;font-weight:700;color:var(--text);margin-bottom:6px">🏅 Scoring</div>
+      <div style="display:flex;flex-direction:column;gap:4px;color:var(--muted)">
+        <div style="display:flex;justify-content:space-between"><span>Exact score</span><span style="color:var(--green);font-weight:700">5 pts</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Correct Result + Correct Goal Difference</span><span style="color:var(--gold);font-weight:700">4 pts</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Correct Result only</span><span style="color:var(--gold);font-weight:700">3 pts</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Wrong prediction</span><span style="color:var(--muted);font-weight:700">0 pts</span></div>
+      </div>
+    </div>
+
   </div>
 
   <div class="shdr"><span>🏆 Top Standings</span></div>
@@ -285,16 +303,35 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
 <!-- USER MODAL -->
 <div class="overlay" id="userModal">
   <div class="modal">
-    <h3>👋 Select Your Name</h3>
-    <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Choose your name to submit predictions</p>
-    <div id="userPickList"></div>
-    <div style="margin-top:10px">
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <input class="minput" id="newNameIn" placeholder="Your name..." style="margin:0;flex:1" onkeydown="if(event.key==='Enter')document.getElementById('newPinIn').focus()">
-        <input class="minput" type="password" inputmode="numeric" maxlength="4" id="newPinIn" placeholder="PIN" style="margin:0;width:72px" onkeydown="if(event.key==='Enter')createLogin()">
+    <h3>👋 Sign In</h3>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Select your name and enter your PIN</p>
+
+    <!-- Existing user: dropdown + PIN -->
+    <div id="existingSection">
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">Your Name</label>
+      <select class="minput" id="userSelect" onchange="onUserSelect()" style="appearance:auto;cursor:pointer">
+        <option value="">— Select your name —</option>
+      </select>
+      <div id="pinSection" style="display:none">
+        <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">PIN</label>
+        <input class="minput" type="password" inputmode="numeric" maxlength="4" id="pinIn" placeholder="4-digit PIN" onkeydown="if(event.key==='Enter')confirmPin()">
+        <button class="btn btn-primary" style="margin-top:0" onclick="confirmPin()">Sign In</button>
       </div>
-      <button class="btn btn-sm btn-green" onclick="createLogin()" style="width:100%;padding:12px;margin-top:0">Add Player</button>
     </div>
+
+    <div style="display:flex;align-items:center;gap:10px;margin:16px 0">
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <span style="font-size:12px;color:var(--muted)">New player?</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>
+
+    <!-- New user -->
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <input class="minput" id="newNameIn" placeholder="Your name..." style="margin:0;flex:1" onkeydown="if(event.key==='Enter')document.getElementById('newPinIn').focus()">
+      <input class="minput" type="password" inputmode="numeric" maxlength="4" id="newPinIn" placeholder="PIN" style="margin:0;width:72px" onkeydown="if(event.key==='Enter')createLogin()">
+    </div>
+    <button class="btn btn-sm btn-green" onclick="createLogin()" style="width:100%;padding:12px;margin-top:0">Register &amp; Sign In</button>
+
     <button class="btn btn-ghost" style="width:100%;margin-top:10px" onclick="closeUserModal()">Cancel</button>
   </div>
 </div>
@@ -538,27 +575,33 @@ function calcLB(){
 function renderHome(){
   const lb=calcLB(),users=getUsers(),preds=getPreds();
   const todayM=allMatches().filter(m=>isNext48h(m));
-  document.getElementById('sPlayers').textContent=users.length;
-  document.getElementById('sPreds').textContent=preds.length;
+  if(document.getElementById('sPlayers')) document.getElementById('sPlayers').textContent=users.length;
+  if(document.getElementById('sPreds')) document.getElementById('sPreds').textContent=preds.length;
   document.getElementById('todayCnt').textContent=todayM.length+' match'+(todayM.length!==1?'es':'');
 
   const lbEl=document.getElementById('homeLB');
-  if(!lb.length){lbEl.innerHTML='<div class="empty"><div class="eico">🏆</div><p>No predictions yet</p></div>';return;}
-  const medals=['🥇','🥈','🥉'];
-  lbEl.innerHTML=lb.slice(0,3).map((u,i)=>`
-    <div class="lb-row">
-      <div class="rank-badge r${i+1}">${i+1}</div>
-      <div style="flex:1"><div class="lb-name">${medals[i]} ${u.name}</div>
-      <div class="lb-sub">${u.predCount} predictions · ${u.exact} exact scores</div></div>
-      <div class="lb-pts">${u.pts}</div>
-    </div>`).join('');
+  if(!lb.length){
+    lbEl.innerHTML='<div class="empty"><div class="eico">🏆</div><p>No predictions yet</p></div>';
+  }else{
+    const medals=['🥇','🥈','🥉'];
+    lbEl.innerHTML=lb.slice(0,3).map((u,i)=>`
+      <div class="lb-row">
+        <div class="rank-badge r${i+1}">${i+1}</div>
+        <div style="flex:1"><div class="lb-name">${medals[i]} ${u.name}</div>
+        <div class="lb-sub">${u.predCount} predictions · ${u.exact} exact scores</div></div>
+        <div class="lb-pts">${u.pts}</div>
+      </div>`).join('');
+  }
 
   const tEl=document.getElementById('todayList');
-  if(!todayM.length){tEl.innerHTML='<div class="empty"><div class="eico">📅</div><p>No matches today</p></div>';return;}
+  if(!todayM.length){
+    tEl.innerHTML='<div class="empty"><div class="eico">📅</div><p>No upcoming matches</p></div>';
+    return;
+  }
   tEl.innerHTML=todayM.map(m=>`
     <div class="urow">
       <div><div style="font-weight:600;font-size:13px">${m.t1} vs ${m.t2}</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:2px">${m.group}</div></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${m.group} · ${fmtDate(m)}</div></div>
       <div class="mtime">${fmtTime(m)}</div>
     </div>`).join('');
 }
@@ -641,7 +684,7 @@ function renderLB(sort='pts'){
     return`<div class="lb-row">
       <div class="rank-badge ${i<3?'r'+(i+1):'rx'}">${i+1}</div>
       <div style="flex:1"><div class="lb-name">${medals[i]||''} ${u.name}</div>
-      <div class="lb-sub">${u.predCount} preds · ${pct}% correct · ${u.exact} exact</div></div>
+      <div class="lb-sub">${u.predCount} predictions · ${pct}% correct · ${u.exact} exact</div></div>
       <div style="text-align:right"><div class="lb-pts">${u.pts}</div>
       <div style="font-size:10px;color:var(--muted)">pts</div></div>
     </div>`;
@@ -894,43 +937,40 @@ async function changePw(){
 //  USER MODAL
 // ═══════════════════════════════════════════════
 function openUserModal(){
-  _pinTarget=null;
-  renderPickList();
+  const me=getMe();
+  const sel=document.getElementById('userSelect');
+  sel.innerHTML='<option value="">— Select your name —</option>';
+  DB.users.forEach(u=>{
+    const opt=document.createElement('option');
+    opt.value=u.id;
+    opt.textContent=u.name;
+    if(me?.id===u.id) opt.selected=true;
+    sel.appendChild(opt);
+  });
+  document.getElementById('pinSection').style.display='none';
+  document.getElementById('pinIn').value='';
+  document.getElementById('newNameIn').value='';
+  document.getElementById('newPinIn').value='';
+  if(me) onUserSelect();
   document.getElementById('userModal').classList.add('open');
 }
 
-function renderPickList(){
-  const users=getUsers(),me=getMe(),lb=calcLB();
-  if(_pinTarget){
-    const u=DB.users.find(x=>x.id===_pinTarget);
-    document.getElementById('userPickList').innerHTML=`
-      <button onclick="_pinTarget=null;renderPickList()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;margin-bottom:10px;padding:0">← Back</button>
-      <div style="font-weight:600;margin-bottom:12px">Enter PIN for ${u.name}</div>
-      <input class="minput" type="password" inputmode="numeric" maxlength="4" id="pinIn" placeholder="4-digit PIN" onkeydown="if(event.key==='Enter')confirmPin('${u.id}')">
-      <button class="btn btn-primary" style="margin-top:0" onclick="confirmPin('${u.id}')">Sign In</button>`;
-    setTimeout(()=>document.getElementById('pinIn')?.focus(),80);
-    return;
-  }
-  document.getElementById('userPickList').innerHTML=users.length
-    ? users.map(u=>{
-        const e=lb.find(x=>x.id===u.id);
-        const active=me?.id===u.id;
-        return`<div onclick="showPin('${u.id}')" style="display:flex;align-items:center;padding:10px;border-radius:8px;cursor:pointer;background:${active?'rgba(59,130,246,0.12)':'transparent'};margin-bottom:4px">
-          <div style="flex:1;font-weight:600">${active?'✓ ':''}${u.name}</div>
-          <div style="font-size:12px;color:var(--muted)">${e?.pts||0} pts · 🔒</div>
-        </div>`;
-      }).join('')
-    : '<div style="color:var(--muted);font-size:13px;padding:8px 0">No players yet — add your name below</div>';
+function onUserSelect(){
+  const id=document.getElementById('userSelect').value;
+  const ps=document.getElementById('pinSection');
+  if(!id){ps.style.display='none';return;}
+  ps.style.display='block';
+  document.getElementById('pinIn').value='';
+  setTimeout(()=>document.getElementById('pinIn').focus(),80);
 }
 
-function showPin(id){_pinTarget=id;renderPickList();}
-
-function confirmPin(id){
+function confirmPin(){
+  const id=document.getElementById('userSelect').value;
+  if(!id){toast('Select your name first','err');return;}
   const u=DB.users.find(x=>x.id===id);
   const entered=document.getElementById('pinIn').value;
   if(!entered||entered.length<4){toast('Enter your 4-digit PIN','err');return;}
   if(!u.pin){
-    // First login — set PIN now
     u.pin=entered;
     apiCall({action:'setPin',id,pin:entered}).catch(()=>{});
     selectUser(id);
@@ -938,7 +978,7 @@ function confirmPin(id){
     return;
   }
   if(String(u.pin)===String(entered)){selectUser(id);}
-  else{toast('Wrong PIN','err');document.getElementById('pinIn').value='';}
+  else{toast('Wrong PIN','err');document.getElementById('pinIn').value='';document.getElementById('pinIn').focus();}
 }
 
 function closeUserModal(){document.getElementById('userModal').classList.remove('open');_pinTarget=null;}
