@@ -297,6 +297,13 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
 
 <div class="toast" id="toast"></div>
 
+<!-- LOADING OVERLAY -->
+<div id="loadingOverlay" style="display:none;position:fixed;inset:0;background:rgba(7,11,20,0.92);z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  <div style="width:48px;height:48px;border:4px solid rgba(59,130,246,0.2);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+  <div id="loadingMsg" style="color:#94a3b8;font-size:14px">Loading...</div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
 <script>
 // ═══════════════════════════════════════════════
 //  MATCH DATA  (times in IST = UTC+05:30)
@@ -377,18 +384,86 @@ const MATCHES=[
 ];
 
 // ═══════════════════════════════════════════════
+//  CONFIGURATION — paste your Apps Script Web App URL here
+// ═══════════════════════════════════════════════
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHQ-UvPvyhIHgN3tYbSSV98bwb0RPxYEJLfqSxkKaeXDiFjyBuA7W8sjpzFi8D6Mq8GA/exec';
+
+// ═══════════════════════════════════════════════
+//  IN-MEMORY DATABASE (synced from Google Sheets)
+// ═══════════════════════════════════════════════
+let DB = {users:[], preds:[], results:{}, custom:[], adminPw:'admin2026'};
+let _refreshTimer = null;
+
+async function apiCall(params) {
+  const qs = Object.entries(params)
+    .map(([k,v]) => encodeURIComponent(k) + '=' + encodeURIComponent(v))
+    .join('&');
+  const res = await fetch(SCRIPT_URL + '?' + qs);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+async function loadAll(silent) {
+  if (!silent) showLoading(true, 'Loading data…');
+  try {
+    const data = await apiCall({action:'getAll'});
+    DB.users  = (data.users  || []).map(u => ({id:String(u.id), name:String(u.name)}));
+    DB.preds  = (data.preds  || []).map(p => ({uid:String(p.uid), mid:String(p.mid), s1:Number(p.s1), s2:Number(p.s2), ts:Number(p.ts)}));
+    DB.custom = (data.custom || []).map(c => ({id:String(c.id), group:String(c.group), t1:String(c.t1), t2:String(c.t2), ist:String(c.ist)}));
+    DB.results = {};
+    (data.results || []).forEach(r => { DB.results[String(r.mid)] = {s1:Number(r.s1), s2:Number(r.s2)}; });
+    DB.adminPw = String(data.adminPw || 'admin2026');
+    return true;
+  } catch(e) {
+    if (!silent) toast('Failed to load: ' + e.message, 'err');
+    return false;
+  } finally {
+    if (!silent) showLoading(false);
+  }
+}
+
+function showLoading(show, msg) {
+  const ov = document.getElementById('loadingOverlay');
+  ov.style.display = show ? 'flex' : 'none';
+  if (msg) document.getElementById('loadingMsg').textContent = msg;
+}
+
+function startAutoRefresh() {
+  clearInterval(_refreshTimer);
+  _refreshTimer = setInterval(async () => {
+    const ok = await loadAll(true);
+    if (ok) refreshCurrentPage();
+  }, 30000);
+}
+
+function refreshCurrentPage() {
+  if (curPage === 'home')        renderHome();
+  if (curPage === 'predict')     renderPredict();
+  if (curPage === 'leaderboard') renderLB(lbSort);
+  if (curPage === 'admin' && adminOpen) { renderAdminResults(); renderCustomMatches(); renderPlayers(); }
+}
+
+// ═══════════════════════════════════════════════
+//  DB ACCESSORS (replace localStorage)
+// ═══════════════════════════════════════════════
+function getUsers()  { return DB.users; }
+function getPreds()  { return DB.preds; }
+function getResults(){ return DB.results; }
+function getMe() {
+  const id = localStorage.getItem('wc_uid');
+  return id ? DB.users.find(u => u.id === id) || null : null;
+}
+
+// ═══════════════════════════════════════════════
 //  HELPERS
 // ═══════════════════════════════════════════════
 function parseIST(s){
-  // s like '2026-06-12T00:30' or '2026-06-12T00:30:00' — treat as IST (UTC+05:30)
   const padded = s.length===16 ? s+':00' : s;
   return new Date(padded+'+05:30');
 }
 
-function allMatches(){
-  const custom=JSON.parse(localStorage.getItem('wc_custom')||'[]');
-  return [...MATCHES,...custom];
-}
+function allMatches(){ return [...MATCHES, ...DB.custom]; }
 
 const now=()=>new Date();
 
@@ -402,7 +477,6 @@ function isNext24h(m){
 }
 
 function isRecentLocked(m){
-  // kicked off in last 24h
   const k=parseIST(m.ist),n=now();
   return k<=n && k>=new Date(n.getTime()-24*60*60*1000);
 }
@@ -424,17 +498,6 @@ function fmtDate(m){
   const k=parseIST(m.ist);
   const d=new Date(k.getTime()+5.5*3600000);
   return d.toLocaleDateString('en-IN',{month:'short',day:'numeric',timeZone:'UTC'});
-}
-
-function getUsers(){return JSON.parse(localStorage.getItem('wc_users')||'[]')}
-function saveUsers(u){localStorage.setItem('wc_users',JSON.stringify(u))}
-function getPreds(){return JSON.parse(localStorage.getItem('wc_preds')||'[]')}
-function savePreds(p){localStorage.setItem('wc_preds',JSON.stringify(p))}
-function getResults(){return JSON.parse(localStorage.getItem('wc_results')||'{}')}
-function saveResults(r){localStorage.setItem('wc_results',JSON.stringify(r))}
-function getMe(){
-  const id=localStorage.getItem('wc_uid');
-  return id ? getUsers().find(u=>u.id===id)||null : null;
 }
 
 function calcPts(pred,res){
@@ -471,7 +534,6 @@ function renderHome(){
   document.getElementById('sPreds').textContent=preds.length;
   document.getElementById('todayCnt').textContent=todayM.length+' match'+(todayM.length!==1?'es':'');
 
-  // Top 3
   const lbEl=document.getElementById('homeLB');
   if(!lb.length){lbEl.innerHTML='<div class="empty"><div class="eico">🏆</div><p>No predictions yet</p></div>';return;}
   const medals=['🥇','🥈','🥉'];
@@ -483,7 +545,6 @@ function renderHome(){
       <div class="lb-pts">${u.pts}</div>
     </div>`).join('');
 
-  // Today matches
   const tEl=document.getElementById('todayList');
   if(!todayM.length){tEl.innerHTML='<div class="empty"><div class="eico">📅</div><p>No matches today</p></div>';return;}
   tEl.innerHTML=todayM.map(m=>`
@@ -508,7 +569,6 @@ function renderPredict(){
     el.innerHTML=upcoming.map(m=>matchCard(m,me,preds,res)).join('');
   }
 
-  // Recent section (last 24h, user predicted)
   const myRecent=me ? recent.filter(m=>preds.find(p=>p.uid===me.id&&p.mid===m.id)) : [];
   document.getElementById('recentHdr').style.display=myRecent.length?'block':'none';
   document.getElementById('recentList').innerHTML=myRecent.map(m=>matchCard(m,me,preds,res,true)).join('');
@@ -606,12 +666,11 @@ function renderAdminResults(){
 }
 
 function renderCustomMatches(){
-  const custom=JSON.parse(localStorage.getItem('wc_custom')||'[]');
   const el=document.getElementById('customList');
-  if(!custom.length){
+  if(!DB.custom.length){
     el.innerHTML='<div class="empty" style="padding:20px"><div class="eico">📝</div><p>No knockout matches yet</p></div>';return;
   }
-  el.innerHTML=custom.map(m=>`
+  el.innerHTML=DB.custom.map(m=>`
     <div class="card" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <div><div style="font-weight:600;font-size:14px">${m.t1} vs ${m.t2}</div>
       <div style="font-size:12px;color:var(--muted);margin-top:2px">${m.group} · ${fmtDate(m)} ${fmtTime(m)}</div></div>
@@ -663,8 +722,7 @@ function renderAdmin(){
 
 function adminLogin(){
   const pw=document.getElementById('adminPwIn').value;
-  const stored=localStorage.getItem('wc_apw')||'admin2026';
-  if(pw===stored){adminOpen=true;document.getElementById('adminPwIn').value='';renderAdmin();toast('Admin unlocked','ok');}
+  if(pw===DB.adminPw){adminOpen=true;document.getElementById('adminPwIn').value='';renderAdmin();toast('Admin unlocked','ok');}
   else{toast('Wrong password','err');document.getElementById('adminPwIn').value='';}
 }
 
@@ -683,7 +741,7 @@ function lbTab(sort,btn){
   btn.classList.add('active');lbSort=sort;renderLB(sort);
 }
 
-function submitPred(mid){
+async function submitPred(mid){
   const me=getMe();
   if(!me){openUserModal();return;}
   const s1=parseInt(document.getElementById('s1-'+mid).value);
@@ -691,68 +749,135 @@ function submitPred(mid){
   if(isNaN(s1)||isNaN(s2)||s1<0||s2<0){toast('Enter scores for both teams','err');return;}
   const m=allMatches().find(x=>x.id===mid);
   if(!m||isLocked(m)){toast('Predictions are locked','err');return;}
-  const preds=getPreds().filter(p=>!(p.uid===me.id&&p.mid===mid));
-  preds.push({uid:me.id,mid,s1,s2,ts:Date.now()});
-  savePreds(preds);
-  toast(`Saved: ${s1}–${s2} ✓`,'ok');
+
+  // Optimistic update
+  DB.preds = DB.preds.filter(p=>!(p.uid===me.id&&p.mid===mid));
+  DB.preds.push({uid:me.id,mid,s1,s2,ts:Date.now()});
   renderPredict();
+  toast('Saving…','');
+
+  try {
+    await apiCall({action:'savePred',uid:me.id,mid,s1,s2,ts:Date.now()});
+    toast(`Saved: ${s1}–${s2} ✓`,'ok');
+  } catch(e) {
+    toast('Save failed – check connection','err');
+    DB.preds = DB.preds.filter(p=>!(p.uid===me.id&&p.mid===mid));
+    renderPredict();
+  }
 }
 
-function clearPred(mid){
+async function clearPred(mid){
   const me=getMe();if(!me)return;
-  savePreds(getPreds().filter(p=>!(p.uid===me.id&&p.mid===mid)));
+  const prev=DB.preds.find(p=>p.uid===me.id&&p.mid===mid);
+  DB.preds=DB.preds.filter(p=>!(p.uid===me.id&&p.mid===mid));
   renderPredict();
+  try {
+    await apiCall({action:'delPred',uid:me.id,mid});
+  } catch(e) {
+    toast('Failed to clear prediction','err');
+    if(prev) DB.preds.push(prev);
+    renderPredict();
+  }
 }
 
-function saveResult(mid){
+async function saveResult(mid){
   const s1=parseInt(document.getElementById('r1-'+mid).value);
   const s2=parseInt(document.getElementById('r2-'+mid).value);
   if(isNaN(s1)||isNaN(s2)||s1<0||s2<0){toast('Enter valid scores','err');return;}
-  const r=getResults();r[mid]={s1,s2};saveResults(r);
-  toast('Result saved ✓','ok');renderAdminResults();
+  DB.results[mid]={s1,s2};
+  renderAdminResults();
+  toast('Saving…','');
+  try {
+    await apiCall({action:'saveResult',mid,s1,s2});
+    toast('Result saved ✓','ok');
+  } catch(e) {
+    toast('Save failed – check connection','err');
+  }
 }
 
-function addCustomMatch(){
+async function addCustomMatch(){
   const label=document.getElementById('nLabel').value.trim();
   const t1=document.getElementById('nT1').value.trim();
   const t2=document.getElementById('nT2').value.trim();
   const dt=document.getElementById('nDate').value;
   if(!label||!t1||!t2||!dt){toast('Fill all fields','err');return;}
-  const custom=JSON.parse(localStorage.getItem('wc_custom')||'[]');
-  custom.push({id:'CM'+Date.now(),group:label,t1,t2,ist:dt.slice(0,16)});
-  localStorage.setItem('wc_custom',JSON.stringify(custom));
-  ['nLabel','nT1','nT2','nDate'].forEach(id=>document.getElementById(id).value='');
-  toast('Match added ✓','ok');renderCustomMatches();
+  const id='CM'+Date.now();
+  const ist=dt.slice(0,16);
+  DB.custom.push({id,group:label,t1,t2,ist});
+  ['nLabel','nT1','nT2','nDate'].forEach(i=>document.getElementById(i).value='');
+  renderCustomMatches();
+  toast('Adding…','');
+  try {
+    await apiCall({action:'addCustom',id,group:label,t1,t2,ist});
+    toast('Match added ✓','ok');
+  } catch(e) {
+    toast('Save failed – check connection','err');
+    DB.custom=DB.custom.filter(m=>m.id!==id);
+    renderCustomMatches();
+  }
 }
 
-function delCustomMatch(id){
-  let c=JSON.parse(localStorage.getItem('wc_custom')||'[]');
-  c=c.filter(m=>m.id!==id);localStorage.setItem('wc_custom',JSON.stringify(c));
-  renderCustomMatches();toast('Removed','ok');
+async function delCustomMatch(id){
+  const prev=DB.custom.find(m=>m.id===id);
+  DB.custom=DB.custom.filter(m=>m.id!==id);
+  renderCustomMatches();
+  try {
+    await apiCall({action:'delCustom',id});
+    toast('Removed','ok');
+  } catch(e) {
+    toast('Failed to remove','err');
+    if(prev) DB.custom.push(prev);
+    renderCustomMatches();
+  }
 }
 
-function adminAddUser(){
+async function adminAddUser(){
   const name=prompt('Player name:');
   if(!name?.trim())return;
-  const users=getUsers();
-  if(users.find(u=>u.name.toLowerCase()===name.trim().toLowerCase())){toast('Name already exists','err');return;}
-  users.push({id:'U'+Date.now(),name:name.trim()});saveUsers(users);
-  renderPlayers();toast(name.trim()+' added ✓','ok');
+  if(DB.users.find(u=>u.name.toLowerCase()===name.trim().toLowerCase())){toast('Name already exists','err');return;}
+  const id='U'+Date.now();
+  DB.users.push({id,name:name.trim()});
+  renderPlayers();
+  toast('Adding…','');
+  try {
+    await apiCall({action:'addUser',id,name:name.trim()});
+    toast(name.trim()+' added ✓','ok');
+  } catch(e) {
+    toast('Save failed','err');
+    DB.users=DB.users.filter(u=>u.id!==id);
+    renderPlayers();
+  }
 }
 
-function delUser(id){
+async function delUser(id){
   if(!confirm('Remove player and all their predictions?'))return;
-  saveUsers(getUsers().filter(u=>u.id!==id));
-  savePreds(getPreds().filter(p=>p.uid!==id));
+  const prevUsers=DB.users.slice();
+  const prevPreds=DB.preds.slice();
+  DB.users=DB.users.filter(u=>u.id!==id);
+  DB.preds=DB.preds.filter(p=>p.uid!==id);
   if(localStorage.getItem('wc_uid')===id){localStorage.removeItem('wc_uid');updateChip();}
-  renderPlayers();toast('Player removed','ok');
+  renderPlayers();
+  try {
+    await apiCall({action:'delUser',id});
+    toast('Player removed','ok');
+  } catch(e) {
+    toast('Failed to remove player','err');
+    DB.users=prevUsers;DB.preds=prevPreds;
+    renderPlayers();
+  }
 }
 
-function changePw(){
+async function changePw(){
   const pw=document.getElementById('newPwIn').value.trim();
   if(!pw){toast('Enter a password','err');return;}
-  localStorage.setItem('wc_apw',pw);document.getElementById('newPwIn').value='';
-  toast('Password updated ✓','ok');
+  document.getElementById('newPwIn').value='';
+  try {
+    await apiCall({action:'setPw',pw});
+    DB.adminPw=pw;
+    toast('Password updated ✓','ok');
+  } catch(e) {
+    toast('Failed to update password','err');
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -781,19 +906,23 @@ function selectUser(id){
   if(curPage==='predict')renderPredict();
 }
 
-function createLogin(){
+async function createLogin(){
   const name=document.getElementById('newNameIn').value.trim();
   if(!name)return;
-  const users=getUsers();
-  const existing=users.find(u=>u.name.toLowerCase()===name.toLowerCase());
+  const existing=DB.users.find(u=>u.name.toLowerCase()===name.toLowerCase());
   if(existing){selectUser(existing.id);document.getElementById('newNameIn').value='';return;}
   const id='U'+Date.now();
-  users.push({id,name});saveUsers(users);
+  DB.users.push({id,name});
   localStorage.setItem('wc_uid',id);
   document.getElementById('newNameIn').value='';
   closeUserModal();updateChip();
   toast('Welcome, '+name+'!','ok');
   if(curPage==='predict')renderPredict();
+  try {
+    await apiCall({action:'addUser',id,name});
+  } catch(e) {
+    toast('Profile save failed – check connection','err');
+  }
 }
 
 function updateChip(){
@@ -814,9 +943,18 @@ function toast(msg,type=''){
 // ═══════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded',()=>{
-  updateChip();renderHome();
-  document.getElementById('userModal').addEventListener('click',function(e){if(e.target===this)closeUserModal();});
+document.addEventListener('DOMContentLoaded', async () => {
+  if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    showLoading(true, '⚙️ Set SCRIPT_URL in index.html to connect Google Sheets');
+    return;
+  }
+  const ok = await loadAll(false);
+  if (ok) {
+    updateChip();
+    renderHome();
+    startAutoRefresh();
+  }
+  document.getElementById('userModal').addEventListener('click', function(e){ if(e.target===this) closeUserModal(); });
 });
 </script>
 </body>
