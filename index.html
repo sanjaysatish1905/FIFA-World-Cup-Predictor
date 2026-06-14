@@ -604,12 +604,25 @@ function renderHome(){
     tEl.innerHTML='<div class="empty"><div class="eico">📅</div><p>No upcoming matches</p></div>';
     return;
   }
-  tEl.innerHTML=todayM.map(m=>`
-    <div class="urow">
+  const me=getMe(), preds=getPreds();
+  tEl.innerHTML=todayM.map(m=>{
+    let badge='';
+    if(me){
+      const hasPred=preds.find(p=>p.uid===me.id&&p.mid===m.id);
+      const locked=isLocked(m);
+      if(hasPred)      badge=`<span style="font-size:11px;background:rgba(16,185,129,0.12);color:var(--green);border-radius:6px;padding:2px 8px;font-weight:600">✅ Done</span>`;
+      else if(locked)  badge=`<span style="font-size:11px;background:rgba(239,68,68,0.1);color:var(--red);border-radius:6px;padding:2px 8px;font-weight:600">🔒 Missed</span>`;
+      else             badge=`<span style="font-size:11px;background:rgba(245,158,11,0.12);color:var(--gold);border-radius:6px;padding:2px 8px;font-weight:600">⚠️ Pending</span>`;
+    }
+    return`<div class="urow">
       <div><div style="font-weight:600;font-size:13px">${m.t1} vs ${m.t2}</div>
       <div style="font-size:11px;color:var(--muted);margin-top:2px">${m.group} · ${fmtDate(m)}</div></div>
-      <div class="mtime">${fmtTime(m)}</div>
-    </div>`).join('');
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <span class="mtime">${fmtTime(m)}</span>
+        ${badge}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderPredict(){
