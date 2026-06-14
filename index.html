@@ -604,7 +604,7 @@ function renderHome(){
     tEl.innerHTML='<div class="empty"><div class="eico">📅</div><p>No upcoming matches</p></div>';
     return;
   }
-  const me=getMe(), preds=getPreds();
+  const me=getMe();
   tEl.innerHTML=todayM.map(m=>{
     let badge='';
     if(me){
