@@ -18,7 +18,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
 
 /* HEADER */
 .hdr{background:linear-gradient(135deg,#0f172a,#1e3a5f);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border)}
-.hdr-title{font-size:17px;font-weight:800;background:linear-gradient(90deg,#f59e0b,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr-title{font-size:17px;font-weight:800;background:linear-gradient(90deg,#f59e0b,#3b82f6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
 .user-chip{background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;cursor:pointer;color:var(--text);display:flex;align-items:center;gap:6px}
 .user-chip:hover{background:var(--card3)}
 
@@ -752,8 +752,23 @@ function renderPicks(){
 }
 
 function renderAdminResults(){
-  const sorted=[...allMatches()].sort((a,b)=>parseIST(a.ist)-parseIST(b.ist));
   const res=getResults();
+  const now=Date.now();
+  const h24=24*60*60*1000;
+  function matchGroup(m){
+    const t=parseIST(m.ist);
+    if(t<=now && t>=now-h24) return 0; // completed in last 24 hours
+    if(t>now) return 1;                // yet to happen
+    return 2;                          // older completed
+  }
+  function matchNum(id){ return parseInt(id.replace(/\D/g,''))||0; }
+  const sorted=[...allMatches()].sort((a,b)=>{
+    const ga=matchGroup(a),gb=matchGroup(b);
+    if(ga!==gb) return ga-gb;
+    if(ga===0) return parseIST(b.ist)-parseIST(a.ist); // most recent first
+    if(ga===1) return parseIST(a.ist)-parseIST(b.ist); // earliest upcoming first
+    return matchNum(a.id)-matchNum(b.id);              // by match id ascending
+  });
   const entered=Object.keys(res).length;
   document.getElementById('resultsCountHdr').innerHTML=
     `<span>Enter Match Results</span><span style="color:var(--muted);font-weight:400;text-transform:none">${entered}/${sorted.length} entered</span>`;
@@ -768,7 +783,7 @@ function renderAdminResults(){
         <div class="rteam" style="text-align:right">${m.t2}</div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:12px;color:var(--muted)">${fmtDate(m)} ${fmtTime(m)}</span>
+        <span style="font-size:12px;color:var(--muted)">${m.id} · ${fmtDate(m)} ${fmtTime(m)}</span>
         ${r!=null?`<span class="rsaved">✅ Saved</span>`:''}
       </div>
       <button class="btn btn-sm btn-green" style="width:100%" onclick="saveResult('${m.id}')">Save Result</button>
