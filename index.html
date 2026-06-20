@@ -176,10 +176,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
       <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;font-weight:700;color:var(--text);margin-bottom:6px">🏅 Scoring</div>
       <div style="display:flex;flex-direction:column;gap:4px;color:var(--muted)">
         <div style="display:flex;justify-content:space-between"><span>Exact score</span><span style="color:var(--green);font-weight:700">5 pts</span></div>
-        <div style="display:flex;justify-content:space-between"><span>Correct Result + Correct Goal Difference</span><span style="color:var(--gold);font-weight:700">4 pts</span></div>
+        <div style="display:flex;justify-content:space-between"><span>Correct Result & Goal Difference</span><span style="color:var(--gold);font-weight:700">4 pts</span></div>
         <div style="display:flex;justify-content:space-between"><span>Correct Result only</span><span style="color:var(--gold);font-weight:700">3 pts</span></div>
         <div style="display:flex;justify-content:space-between"><span>Wrong prediction</span><span style="color:var(--muted);font-weight:700">0 pts</span></div>
       </div>
+	  <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
+	  <div style="font-weight:700;color:var(--text);margin-bottom:6px">🏆 Tie-Breakers</div>
+	  <div style="font-size:11px;color:var(--muted);line-height:1.8">1️⃣ Points▸2️⃣ Exact Scores▸3️⃣ Correct Goal Differences Predicted▸4️⃣ Accuracy%▸5️⃣ Predictions Submitted</div>
+	  </div>
     </div>
 
   </div>
@@ -565,14 +569,14 @@ function calcLB(){
   const users=getUsers(),preds=getPreds(),res=getResults();
   return users.map(u=>{
     const mp=preds.filter(p=>p.uid===u.id);
-    let pts=0,exact=0,correct=0,scored=0;
+    let pts=0,exact=0,differential=0,correct=0,scored=0;
     mp.forEach(p=>{
       const r=res[p.mid];if(!r)return;
       const v=calcPts(p,r);if(v===null)return;
-      scored++;pts+=v;if(v===5)exact++;if(v>=3)correct++;
+      scored++;pts+=v;if(v===5)exact++;if(v===4||v===5)differential++;if(v>=3)correct++;
     });
-    return{...u,pts,exact,correct,scored,predCount:mp.length,accuracy: scored ? correct / scored : 0};
-  }).sort((a,b)=>b.pts-a.pts||b.exact-a.exact||b.accuracy-a.accuracy||b.predCount-a.predCount);
+    return{...u,pts,exact,differential,correct,scored,predCount:mp.length,accuracy:scored?correct/scored:0};
+  }).sort((a,b)=>b.pts-a.pts||b.exact-a.exact||b.differential-a.differential||b.accuracy-a.accuracy||b.predCount-a.predCount);
 }
 
 // ═══════════════════════════════════════════════
