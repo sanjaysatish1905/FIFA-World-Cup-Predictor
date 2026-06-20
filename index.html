@@ -571,8 +571,8 @@ function calcLB(){
       const v=calcPts(p,r);if(v===null)return;
       scored++;pts+=v;if(v===5)exact++;if(v>=3)correct++;
     });
-    return{...u,pts,exact,correct,scored,predCount:mp.length};
-  }).sort((a,b)=>b.pts-a.pts||b.exact-a.exact);
+    return{...u,pts,exact,correct,scored,predCount:mp.length,accuracy: scored ? correct / scored : 0};
+  }).sort((a,b)=>b.pts-a.pts||b.exact-a.exact||b.accuracy-a.accuracy||b.predCount-a.predCount);
 }
 
 // ═══════════════════════════════════════════════
