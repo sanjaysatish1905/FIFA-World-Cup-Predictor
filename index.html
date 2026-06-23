@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🏆 FIFA WC 2026 Predictor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap')" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800&family=Barlow+Condensed:wght@700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -21,6 +21,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
 .hdr-title{font-size:17px;font-weight:800;background:linear-gradient(90deg,#f59e0b,#3b82f6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
 .user-chip{background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;cursor:pointer;color:var(--text);display:flex;align-items:center;gap:6px}
 .user-chip:hover{background:var(--card3)}
+.hdr-icon-btn{width:32px;height:32px;border-radius:50%;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;flex-shrink:0}
+.hdr-icon-btn:hover{background:var(--card3)}
 
 /* BOTTOM NAV */
 .bnav{position:fixed;bottom:0;left:0;right:0;background:#0a0f1e;border-top:1px solid var(--border);display:flex;z-index:100}
@@ -149,9 +151,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
 
 <header class="hdr">
   <div class="hdr-title">🏆 FIFA WC 2026 Predictor</div>
-  <button class="user-chip" id="userChip" onclick="openUserModal()">
-    <span id="chipName">Sign In</span>
-  </button>
+  <div style="display:flex;align-items:center;gap:8px">
+    <button class="hdr-icon-btn" onclick="openHelpModal()" title="How to Play">?</button>
+    <button class="hdr-icon-btn" onclick="openRulesModal()" title="Rule Changes">📢</button>
+    <button class="user-chip" id="userChip" onclick="openUserModal()">
+      <span id="chipName">Sign In</span>
+    </button>
+  </div>
 </header>
 
 <!-- HOME -->
@@ -165,26 +171,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
       <button class="btn btn-primary" style="margin-top:14px;padding:10px 14px;font-size:13px" onclick="nav('predict')">⚡ Predict</button>
     </div>
 
-    <!-- How to play card -->
-    <div style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;font-size:12px">
-      <div style="font-weight:700;color:var(--text);margin-bottom:10px;font-size:13px">📖 How to Play</div>
-      <div style="color:var(--muted);line-height:1.8">
-        <div>⚽ Predict the score of each match</div>
-        <div>🔒 Predictions lock <strong style="color:var(--text)">10 mins</strong> before kick-off</div>
-        <div>✏️ Edit anytime before the predictions lock</div>
-      </div>
-      <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;font-weight:700;color:var(--text);margin-bottom:6px">🏅 Scoring</div>
-      <div style="display:flex;flex-direction:column;gap:4px;color:var(--muted)">
-        <div style="display:flex;justify-content:space-between"><span>Exact score</span><span style="color:var(--green);font-weight:700">5 pts</span></div>
-        <div style="display:flex;justify-content:space-between"><span>Correct Result & Goal Difference</span><span style="color:var(--gold);font-weight:700">4 pts</span></div>
-        <div style="display:flex;justify-content:space-between"><span>Correct Result only</span><span style="color:var(--gold);font-weight:700">3 pts</span></div>
-        <div style="display:flex;justify-content:space-between"><span>Wrong prediction</span><span style="color:var(--muted);font-weight:700">0 pts</span></div>
-      </div>
-	  <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
-	  <div style="font-weight:700;color:var(--text);margin-bottom:6px">🏆 Tie-Breakers</div>
-	  <div style="font-size:11px;color:var(--muted);line-height:1.8">1️⃣ Points▸2️⃣ Exact Scores▸3️⃣ Correct Goal Differences Predicted▸4️⃣ Accuracy%▸5️⃣ Predictions Submitted</div>
-	  </div>
-    </div>
+    <!-- Tournament Predictions card -->
+    <div id="tournCard" style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;font-size:12px;position:relative;overflow:hidden"></div>
 
   </div>
 
@@ -248,6 +236,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
       <button class="atab active" onclick="aTab('results',this)">Results</button>
       <button class="atab" onclick="aTab('matches',this)">Matches</button>
       <button class="atab" onclick="aTab('players',this)">Players</button>
+      <button class="atab" onclick="aTab('tournament',this)">🏆 Tourn</button>
       <button class="atab" onclick="aTab('settings',this)">Settings</button>
     </div>
 
@@ -259,8 +248,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
     <div id="aMatches" style="display:none">
       <div class="shdr">Add Knockout Match</div>
       <div class="card">
-        <label class="flbl">Round Label (e.g. R16, QF, SF, Final)</label>
-        <input class="finput" id="nLabel" placeholder="Round of 16">
+        <label class="flbl">Round</label>
+        <select class="finput" id="nLabel" style="appearance:auto;cursor:pointer">
+          <option value="">— Select round —</option>
+          <option value="R32">Round of 32</option>
+          <option value="R16">Round of 16</option>
+          <option value="QF">Quarter Final</option>
+          <option value="SF">Semi Final</option>
+          <option value="F">Final</option>
+        </select>
         <label class="flbl">Team A</label>
         <input class="finput" id="nT1" placeholder="Winner Group A">
         <label class="flbl">Team B</label>
@@ -281,6 +277,47 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
       <div class="card" id="playersList"></div>
     </div>
 
+    <div id="aTournament" style="display:none">
+      <div class="shdr">Prediction Windows</div>
+      <div class="card">
+        <label class="flbl">Window 1 Opens (IST)</label>
+        <input class="finput" type="datetime-local" id="tw1_open">
+        <label class="flbl">Window 1 Closes (IST)</label>
+        <input class="finput" type="datetime-local" id="tw1_close">
+        <label class="flbl">Window 2 Opens (IST)</label>
+        <input class="finput" type="datetime-local" id="tw2_open">
+        <label class="flbl">Window 2 Closes (IST)</label>
+        <input class="finput" type="datetime-local" id="tw2_close">
+        <button class="btn btn-sm btn-green" style="width:100%;margin-top:4px" onclick="saveTournWindows()">Save Windows</button>
+      </div>
+
+      <div class="shdr" style="margin-top:4px">Tournament Outcomes</div>
+      <div class="card">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Enter once the tournament is complete to award points.</div>
+        <label class="flbl">🥇 Champion</label>
+        <select class="finput" id="out_champion" style="appearance:auto"></select>
+        <label class="flbl">🥈 Runners-up</label>
+        <select class="finput" id="out_runners_up" style="appearance:auto"></select>
+        <label class="flbl">👟 Golden Boot</label>
+        <select class="finput" id="out_golden_boot" style="appearance:auto"></select>
+        <label class="flbl">🧤 Golden Glove</label>
+        <select class="finput" id="out_golden_glove" style="appearance:auto"></select>
+        <button class="btn btn-sm btn-green" style="width:100%;margin-top:4px" onclick="saveTournOutcomes()">Save Outcomes</button>
+      </div>
+
+      <div class="shdr" style="margin-top:4px">
+        <span>Teams &amp; Players</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-ghost" onclick="addTournOpt('team')">+ Team</button>
+          <button class="btn btn-sm btn-ghost" onclick="addTournOpt('player')">+ Player</button>
+        </div>
+      </div>
+      <div class="card" id="tournOptsList"></div>
+
+      <div class="shdr" style="margin-top:4px">Player Submissions</div>
+      <div class="card" id="tournSubmsList"></div>
+    </div>
+
     <div id="aSettings" style="display:none">
       <div class="shdr">Settings</div>
       <div class="card">
@@ -289,10 +326,16 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
         <button class="btn btn-sm btn-green" onclick="changePw()">Update Password</button>
       </div>
       <div class="card" style="margin-top:0">
-        <div class="shdr" style="margin-bottom:12px">Scoring Rules</div>
+        <div class="shdr" style="margin-bottom:8px">Scoring Rules — Group Stage</div>
         <div class="pts-row"><span>Exact score</span><span style="color:var(--green);font-weight:700">5 pts</span></div>
         <div class="pts-row"><span>Correct result + goal difference</span><span style="color:var(--gold);font-weight:700">4 pts</span></div>
         <div class="pts-row"><span>Correct result only</span><span style="color:var(--gold);font-weight:700">3 pts</span></div>
+        <div class="pts-row"><span>Wrong prediction</span><span style="color:var(--muted);font-weight:700">0 pts</span></div>
+        <div class="shdr" style="margin-top:12px;margin-bottom:8px">Scoring Rules — Knockout Rounds</div>
+        <div class="pts-row"><span>Exact score</span><span style="color:var(--green);font-weight:700">6 pts</span></div>
+        <div class="pts-row"><span>Correct result + goal difference</span><span style="color:var(--gold);font-weight:700">4 pts</span></div>
+        <div class="pts-row"><span>Correct result only</span><span style="color:var(--gold);font-weight:700">3 pts</span></div>
+        <div class="pts-row"><span>Correct penalty winner (on drawn predictions)</span><span style="color:var(--accent);font-weight:700">+2 pts</span></div>
         <div class="pts-row"><span>Wrong prediction</span><span style="color:var(--muted);font-weight:700">0 pts</span></div>
       </div>
       <div class="card" style="margin-top:0">
@@ -310,6 +353,78 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
   <button class="nbtn" onclick="nav('leaderboard')" id="nb-leaderboard"><span class="ico">📊</span>Board</button>
   <button class="nbtn" onclick="nav('admin')" id="nb-admin"><span class="ico">⚙️</span>Admin</button>
 </nav>
+
+<!-- HOW TO PLAY MODAL -->
+<div class="overlay" id="helpModal">
+  <div class="modal">
+    <h3>📖 How to Play</h3>
+    <div style="color:var(--muted);font-size:13px;line-height:1.9;margin-top:12px">
+      <div>⚽ Predict the score of each match</div>
+      <div>🔒 Predictions lock <strong style="color:var(--text)">10 mins</strong> before kick-off</div>
+      <div>✏️ Edit anytime before predictions lock</div>
+    </div>
+    <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px;font-weight:700;color:var(--text);margin-bottom:8px;font-size:13px">🏅 Scoring — Group Stage</div>
+    <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Exact score</span><span style="color:var(--green);font-weight:700">5 pts</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Correct result + goal difference</span><span style="color:var(--gold);font-weight:700">4 pts</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Correct result only</span><span style="color:var(--gold);font-weight:700">3 pts</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Wrong prediction</span><span style="color:var(--muted);font-weight:700">0 pts</span></div>
+    </div>
+    <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px;font-weight:700;color:var(--text);margin-bottom:8px;font-size:13px">🏆 Scoring — Knockout Rounds</div>
+    <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Exact score</span><span style="color:var(--green);font-weight:700">6 pts</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Correct result + goal difference</span><span style="color:var(--gold);font-weight:700">4 pts</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Correct result only</span><span style="color:var(--gold);font-weight:700">3 pts</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Predicted draw + correct penalty winner</span><span style="color:var(--accent);font-weight:700">+2 pts</span></div>
+    </div>
+    <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px;font-size:11px;color:var(--muted);line-height:1.8">
+      <div style="font-weight:700;color:var(--text);margin-bottom:4px;font-size:12px">🏆 Tie-Breakers</div>
+      1️⃣ Points · 2️⃣ Exact Scores · 3️⃣ Correct GD · 4️⃣ Accuracy % · 5️⃣ Predictions Submitted
+    </div>
+    <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:16px" onclick="document.getElementById('helpModal').classList.remove('open')">Close</button>
+  </div>
+</div>
+
+<!-- RULE CHANGES MODAL -->
+<div class="overlay" id="rulesModal">
+  <div class="modal">
+    <h3>📢 Rule Updates — Knockout Phase</h3>
+    <div style="margin-top:14px;display:flex;flex-direction:column;gap:14px">
+
+      <div style="background:var(--card2);border-radius:10px;padding:14px">
+        <div style="font-weight:700;color:var(--gold);font-size:13px;margin-bottom:8px">#1 Updated KO Scoring</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.8">
+          Group stage unchanged (5/4/3). All knockout rounds use:<br>
+          <span style="color:var(--green);font-weight:700">Exact score: 6 pts</span> &nbsp;·&nbsp;
+          <span style="color:var(--gold);font-weight:700">Correct Goal Difference: 4 pts</span> &nbsp;·&nbsp;
+          <span style="color:var(--gold);font-weight:700">Correct result: 3 pts</span>
+        </div>
+      </div>
+
+      <div style="background:var(--card2);border-radius:10px;padding:14px">
+        <div style="font-weight:700;color:var(--gold);font-size:13px;margin-bottom:8px">#2 Penalty Shootout Prediction</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.8">
+          In KO matches, if you predict a draw score, pick who wins on penalties.<br>
+          Correct penalty winner = <span style="color:var(--accent);font-weight:700">+2 bonus pts</span>
+        </div>
+      </div>
+
+      <div style="background:var(--card2);border-radius:10px;padding:14px">
+        <div style="font-weight:700;color:var(--gold);font-size:13px;margin-bottom:8px">#3 Tournament Predictions</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.8">
+          Predict the Champion, Runners-up, Golden Boot Winner &amp; Golden Glove Winner.<br><br>
+          <strong style="color:var(--text)">Window 1 Points</strong> (to close before start of R32):<br>
+          Champion 30 · Runners-up 18 · Golden Boot 15 · Golden Glove 15<br><br>
+          <strong style="color:var(--text)">Window 2 Points</strong> (to close before start of R16):<br>
+          Champion 15 · Runners-up 8 · Golden Boot 8 · Golden Glove 8<br><br>
+          If you lock-in your predictions during Window 1, you get Window 1 Points. If you add in predictions only in Window 2 or you change your Window 1 picks in Window 2, you earn Window 2 points. If your picks remain unchanged, you get Window 1 points.
+        </div>
+      </div>
+
+    </div>
+    <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:16px" onclick="document.getElementById('rulesModal').classList.remove('open')">Close</button>
+  </div>
+</div>
 
 <!-- USER MODAL -->
 <div class="overlay" id="userModal">
@@ -443,7 +558,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHQ-UvPvyhIHgN3tYbS
 // ═══════════════════════════════════════════════
 //  IN-MEMORY DATABASE (synced from Google Sheets)
 // ═══════════════════════════════════════════════
-let DB = {users:[], preds:[], results:{}, custom:[]};
+let DB = {users:[], preds:[], results:{}, custom:[], tournOptions:[], tournPreds:[], tournCfg:{}};
 let _refreshTimer = null;
 
 async function apiCall(params) {
@@ -461,10 +576,13 @@ async function loadAll(silent) {
   try {
     const data = await apiCall({action:'getAll'});
     DB.users  = (data.users  || []).map(u => ({id:String(u.id), name:String(u.name)}));
-    DB.preds  = (data.preds  || []).map(p => ({uid:String(p.uid), mid:String(p.mid), s1:Number(p.s1), s2:Number(p.s2), ts:Number(p.ts)}));
+    DB.preds  = (data.preds  || []).map(p => ({uid:String(p.uid), mid:String(p.mid), s1:Number(p.s1), s2:Number(p.s2), ts:Number(p.ts), pen:String(p.pen||'')}));
     DB.custom = (data.custom || []).map(c => ({id:String(c.id), group:String(c.group), t1:String(c.t1), t2:String(c.t2), ist:String(c.ist)}));
     DB.results = {};
-    (data.results || []).forEach(r => { DB.results[String(r.mid)] = {s1:Number(r.s1), s2:Number(r.s2)}; });
+    (data.results || []).forEach(r => { DB.results[String(r.mid)] = {s1:Number(r.s1), s2:Number(r.s2), pen:String(r.pen||'')}; });
+    DB.tournOptions = (data.tournOptions || []).map(o => ({type:String(o.type), value:String(o.value)}));
+    DB.tournPreds   = (data.tournPreds  || []).map(p => ({uid:String(p.uid), champion:String(p.champion), runners_up:String(p.runners_up), golden_boot:String(p.golden_boot), golden_glove:String(p.golden_glove), window:String(p.window), ts:String(p.ts)}));
+    DB.tournCfg     = data.tournCfg || {};
     return true;
   } catch(e) {
     if (!silent) toast('Failed to load: ' + e.message, 'err');
@@ -556,25 +674,65 @@ function fmtDate(m){
   return d.toLocaleDateString('en-IN',{month:'short',day:'numeric',timeZone:'UTC'});
 }
 
-function calcPts(pred,res){
+const KO_ROUNDS=new Set(['R32','R16','QF','SF','F']);
+
+function calcPts(pred,res,isKO){
   if(!res)return null;
   const{s1:p1,s2:p2}=pred,{s1:a1,s2:a2}=res;
-  if(p1===a1&&p2===a2)return 5;
+  const exactScore=p1===a1&&p2===a2;
   const pr=p1>p2?1:p1<p2?-1:0, ar=a1>a2?1:a1<a2?-1:0;
-  if(pr!==ar)return 0;
-  return(p1-p2)===(a1-a2)?4:3;
+  const correctResult=pr===ar;
+  const correctGD=correctResult&&(p1-p2)===(a1-a2);
+  // Penalty bonus: only when actual is draw AND player predicted draw
+  const penBonus=(isKO&&a1===a2&&p1===p2&&pred.pen&&res.pen&&pred.pen===res.pen)?2:0;
+  if(exactScore) return(isKO?6:5)+penBonus;
+  if(!correctResult)return 0;
+  if(correctGD)return 4+penBonus;
+  return 3;
+}
+
+function calcTournPts(uid){
+  const w1=DB.tournPreds.find(p=>p.uid===uid&&p.window==='1');
+  const w2=DB.tournPreds.find(p=>p.uid===uid&&p.window==='2');
+  if(!w1&&!w2)return 0;
+  const outcomes={
+    champion:    DB.tournCfg.tourn_champion   ||'',
+    runners_up:  DB.tournCfg.tourn_runners_up ||'',
+    golden_boot: DB.tournCfg.tourn_golden_boot||'',
+    golden_glove:DB.tournCfg.tourn_golden_glove||'',
+  };
+  let pts=0;
+  TOURN_FIELDS.forEach(f=>{
+    const outcome=outcomes[f.key];
+    if(!outcome)return;
+    const v1=w1?w1[f.key]:null;
+    const v2=w2?w2[f.key]:null;
+    if(v2!==null){
+      const ptAward=(v2===v1)?TOURN_W1_PTS[f.key]:TOURN_W2_PTS[f.key];
+      if(v2===outcome)pts+=ptAward;
+    }else if(v1!==null){
+      if(v1===outcome)pts+=TOURN_W1_PTS[f.key];
+    }
+  });
+  return pts;
 }
 
 function calcLB(){
-  const users=getUsers(),preds=getPreds(),res=getResults();
+  const users=getUsers(),preds=getPreds(),res=getResults(),matches=allMatches();
   return users.map(u=>{
     const mp=preds.filter(p=>p.uid===u.id);
     let pts=0,exact=0,differential=0,correct=0,scored=0;
     mp.forEach(p=>{
       const r=res[p.mid];if(!r)return;
-      const v=calcPts(p,r);if(v===null)return;
-      scored++;pts+=v;if(v===5)exact++;if(v===4||v===5)differential++;if(v>=3)correct++;
+      const m=matches.find(mx=>mx.id===p.mid);
+      const ko=m?KO_ROUNDS.has(m.group):false;
+      const v=calcPts(p,r,ko);if(v===null)return;
+      scored++;pts+=v;
+      if(v===5||v===6)exact++;
+      if(v===4||v===5||v===6)differential++;
+      if(v>=3)correct++;
     });
+    pts+=calcTournPts(u.id);
     return{...u,pts,exact,differential,correct,scored,predCount:mp.length,accuracy:scored?correct/scored:0};
   }).sort((a,b)=>b.pts-a.pts||b.exact-a.exact||b.differential-a.differential||b.accuracy-a.accuracy||b.predCount-a.predCount);
 }
@@ -583,10 +741,10 @@ function calcLB(){
 //  RENDER FUNCTIONS
 // ═══════════════════════════════════════════════
 function renderHome(){
+  renderTournCard();
   const lb=calcLB(),users=getUsers(),preds=getPreds();
   const todayM=allMatches().filter(m=>isNext48h(m));
   if(document.getElementById('sPlayers')) document.getElementById('sPlayers').textContent=users.length;
-  if(document.getElementById('sPreds')) document.getElementById('sPreds').textContent=preds.length;
   document.getElementById('todayCnt').textContent=todayM.length+' match'+(todayM.length!==1?'es':'');
 
   const lbEl=document.getElementById('homeLB');
@@ -650,9 +808,10 @@ function renderPredict(){
 
 function matchCard(m,me,preds,res,isRecent=false){
   const locked=isLocked(m);
+  const ko=KO_ROUNDS.has(m.group);
   const myPred=me?preds.find(p=>p.uid===me.id&&p.mid===m.id):null;
   const result=res[m.id];
-  const pts=myPred&&result!=null?calcPts(myPred,result):null;
+  const pts=myPred&&result!=null?calcPts(myPred,result,ko):null;
 
   const lockTag=locked?`<span class="lock-badge">🔒 Locked</span>`:'';
 
@@ -664,12 +823,13 @@ function matchCard(m,me,preds,res,isRecent=false){
   }else if(myPred){
     let ptsBadge='';
     if(pts!==null){
-      const c=pts===5?'var(--green)':pts>=3?'var(--gold)':'var(--muted)';
+      const c=pts>=5?'var(--green)':pts>=3?'var(--gold)':'var(--muted)';
       ptsBadge=`<span style="color:${c};font-weight:700;margin-left:8px">${pts>0?'+':''}${pts} pts</span>`;
     }
+    const penLabel=myPred.pen?` · 🥅 ${myPred.pen}`:'';
     const editBtn=!locked?`<button class="btn btn-sm btn-ghost" style="font-size:12px" onclick="clearPred('${m.id}')">Edit</button>`:'';
     footer=`<div class="mfooter" style="display:flex;justify-content:space-between;align-items:center">
-      <span class="sub-badge">✅ ${myPred.s1}–${myPred.s2}${ptsBadge}</span>${editBtn}</div>`;
+      <span class="sub-badge">✅ ${myPred.s1}–${myPred.s2}${penLabel}${ptsBadge}</span>${editBtn}</div>`;
   }else{
     footer=`<div class="mfooter"><button class="submit-btn" onclick="submitPred('${m.id}')">Submit Prediction</button></div>`;
   }
@@ -677,7 +837,28 @@ function matchCard(m,me,preds,res,isRecent=false){
   const dis=locked?'disabled':'';
   const s1=myPred!=null?myPred.s1:'';
   const s2=myPred!=null?myPred.s2:'';
-  const resultBox=result!=null?`<div class="result-box">⚽ Final: ${m.t1} <strong>${result.s1}–${result.s2}</strong> ${m.t2}</div>`:'';
+
+  // Penalty dropdown — KO only, not locked, no existing prediction yet
+  const showPenRow=ko&&!locked&&!myPred;
+  const initDraw=!isNaN(Number(s1))&&!isNaN(Number(s2))&&s1!==''&&s2!==''&&Number(s1)===Number(s2);
+  const penRow=showPenRow?`
+    <div id="pen-row-${m.id}" style="display:${initDraw?'block':'none'};margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">🥅 Who wins on penalties?</div>
+      <select id="pen-${m.id}" style="width:100%;padding:10px;border-radius:8px;background:var(--card2);border:2px solid var(--border);color:var(--text);font-size:14px;text-align:center">
+        <option value="">— Select winner —</option>
+        <option value="${m.t1}">${m.t1}</option>
+        <option value="${m.t2}">${m.t2}</option>
+      </select>
+    </div>`:'';
+
+  // Result box — show pen winner if draw
+  let resultBox='';
+  if(result!=null){
+    const penInfo=(ko&&result.s1===result.s2&&result.pen)?` · 🥅 ${result.pen} win on pens`:'';
+    resultBox=`<div class="result-box">⚽ Final: ${m.t1} <strong>${result.s1}–${result.s2}</strong> ${m.t2}${penInfo}</div>`;
+  }
+
+  const oninput=showPenRow?`oninput="checkPenDraw('${m.id}')"` :'';
 
   return`<div class="mcard${locked?' locked':''}" id="mc-${m.id}">
     <div class="mcard-hdr">
@@ -686,12 +867,12 @@ function matchCard(m,me,preds,res,isRecent=false){
     </div>
     <div class="mbody">
       <div class="tblock"><div class="tname">${m.t1}</div>
-        <input class="sinput" type="number" inputmode="numeric" min="0" max="20" id="s1-${m.id}" value="${s1}" placeholder="0" ${dis}></div>
+        <input class="sinput" type="number" inputmode="numeric" min="0" max="20" id="s1-${m.id}" value="${s1}" placeholder="0" ${dis} ${oninput}></div>
       <div class="vs">VS</div>
       <div class="tblock"><div class="tname">${m.t2}</div>
-        <input class="sinput" type="number" inputmode="numeric" min="0" max="20" id="s2-${m.id}" value="${s2}" placeholder="0" ${dis}></div>
+        <input class="sinput" type="number" inputmode="numeric" min="0" max="20" id="s2-${m.id}" value="${s2}" placeholder="0" ${dis} ${oninput}></div>
     </div>
-    ${resultBox}${footer}
+    ${penRow}${resultBox}${footer}
   </div>`;
 }
 
@@ -724,19 +905,21 @@ function renderPicks(){
   const preds=getPreds(),res=getResults(),users=getUsers(),me=getMe();
   el.innerHTML=locked.map(m=>{
     const result=res[m.id];
+    const ko=KO_ROUNDS.has(m.group);
     const rows=users.map(u=>{
       const p=preds.find(x=>x.uid===u.id&&x.mid===m.id);
-      const pts=p&&result!=null?calcPts(p,result):null;
+      const pts=p&&result!=null?calcPts(p,result,ko):null;
       const isMe=me?.id===u.id;
       let ptsBadge='';
       if(pts!==null){
-        const c=pts===5?'var(--green)':pts>=3?'var(--gold)':'var(--muted)';
+        const c=pts>=5?'var(--green)':pts>=3?'var(--gold)':'var(--muted)';
         ptsBadge=`<span style="color:${c};font-weight:700;min-width:36px;text-align:right">${pts>0?'+':''}${pts}</span>`;
       }
+      const penLabel=p?.pen?` · 🥅 ${p.pen}`:'';
       return`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px">
         <span style="font-weight:${isMe?'700':'400'};color:${isMe?'var(--accent)':'var(--text)'}">${isMe?'▶ ':''}${u.name}</span>
         <div style="display:flex;align-items:center;gap:12px">
-          <span style="font-weight:600;color:${p?'var(--text)':'var(--muted)'}">${p?`${p.s1}–${p.s2}`:'—'}</span>
+          <span style="font-weight:600;color:${p?'var(--text)':'var(--muted)'}">${p?`${p.s1}–${p.s2}${penLabel}`:'—'}</span>
           ${ptsBadge}
         </div>
       </div>`;
@@ -778,15 +961,28 @@ function renderAdminResults(){
     `<span>Enter Match Results</span><span style="color:var(--muted);font-weight:400;text-transform:none">${entered}/${sorted.length} entered</span>`;
   document.getElementById('resultsList').innerHTML=sorted.map(m=>{
     const r=res[m.id];
+    const ko=KO_ROUNDS.has(m.group);
+    const initDraw=r!=null&&r.s1===r.s2;
+    const penField=ko?`
+      <div id="rpen-row-${m.id}" style="display:${initDraw?'block':'none'};margin-top:8px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">🥅 Penalty winner</div>
+        <select id="rpen-${m.id}" style="width:100%;padding:8px;border-radius:8px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:13px">
+          <option value="">— Select winner —</option>
+          <option value="${m.t1}" ${r?.pen===m.t1?'selected':''}>${m.t1}</option>
+          <option value="${m.t2}" ${r?.pen===m.t2?'selected':''}>${m.t2}</option>
+        </select>
+      </div>`:'';
+    const oninput=ko?`oninput="checkAdminPenDraw('${m.id}','${m.t1}','${m.t2}')"` :'';
     return`<div class="rcard">
       <div class="rteams">
         <div class="rteam">${m.t1}</div>
-        <input class="rscore" type="number" inputmode="numeric" min="0" max="20" id="r1-${m.id}" value="${r!=null?r.s1:''}" placeholder="—">
+        <input class="rscore" type="number" inputmode="numeric" min="0" max="20" id="r1-${m.id}" value="${r!=null?r.s1:''}" placeholder="—" ${oninput}>
         <div style="font-weight:700;color:var(--muted);padding:0 4px">:</div>
-        <input class="rscore" type="number" inputmode="numeric" min="0" max="20" id="r2-${m.id}" value="${r!=null?r.s2:''}" placeholder="—">
+        <input class="rscore" type="number" inputmode="numeric" min="0" max="20" id="r2-${m.id}" value="${r!=null?r.s2:''}" placeholder="—" ${oninput}>
         <div class="rteam" style="text-align:right">${m.t2}</div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      ${penField}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;margin-top:8px">
         <span style="font-size:12px;color:var(--muted)">${m.id} · ${fmtDate(m)} ${fmtTime(m)}</span>
         ${r!=null?`<span class="rsaved">✅ Saved</span>`:''}
       </div>
@@ -820,6 +1016,148 @@ function renderPlayers(){
       <button class="btn btn-sm btn-red" onclick="delUser('${u.id}')">Remove</button>
     </div>`;
   }).join('');
+}
+
+// ═══════════════════════════════════════════════
+//  TOURNAMENT ADMIN
+// ═══════════════════════════════════════════════
+
+function renderTournAdmin(){
+  const cfg=DB.tournCfg;
+  // Pre-fill window times
+  ['w1_open','w1_close','w2_open','w2_close'].forEach(k=>{
+    const el=document.getElementById('t'+k);
+    if(el&&cfg[k]) el.value=cfg[k].slice(0,16);
+  });
+  // Populate outcome dropdowns
+  const teams=DB.tournOptions.filter(o=>o.type==='team').map(o=>o.value);
+  const players=DB.tournOptions.filter(o=>o.type==='player').map(o=>o.value);
+  function fillSel(id,items,cur){
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.innerHTML=`<option value="">— Select —</option>`+items.map(v=>`<option value="${v}"${v===cur?' selected':''}>${v}</option>`).join('');
+  }
+  fillSel('out_champion',  teams,  cfg.tourn_champion||'');
+  fillSel('out_runners_up',teams,  cfg.tourn_runners_up||'');
+  fillSel('out_golden_boot',players,cfg.tourn_golden_boot||'');
+  fillSel('out_golden_glove',players,cfg.tourn_golden_glove||'');
+  // TournOptions list
+  const optEl=document.getElementById('tournOptsList');
+  if(!DB.tournOptions.length){
+    optEl.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">No teams or players added yet</div>';
+  }else{
+    const grouped={team:[],player:[]};
+    DB.tournOptions.forEach(o=>grouped[o.type]?.push(o.value));
+    let html='';
+    if(grouped.team.length){
+      html+=`<div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px">Teams</div>`;
+      html+=grouped.team.map(v=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <span>${v}</span><button class="btn btn-sm btn-red" style="padding:4px 10px" onclick="delTournOpt('team','${v}')">✕</button></div>`).join('');
+    }
+    if(grouped.player.length){
+      html+=`<div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin:12px 0 6px">Players</div>`;
+      html+=grouped.player.map(v=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <span>${v}</span><button class="btn btn-sm btn-red" style="padding:4px 10px" onclick="delTournOpt('player','${v}')">✕</button></div>`).join('');
+    }
+    optEl.innerHTML=html;
+  }
+  // Player submissions
+  const subEl=document.getElementById('tournSubmsList');
+  const users=getUsers();
+  if(!DB.tournPreds.length){
+    subEl.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">No submissions yet</div>';
+  }else{
+    subEl.innerHTML=users.map(u=>{
+      const w1=DB.tournPreds.find(p=>p.uid===u.id&&p.window==='1');
+      const w2=DB.tournPreds.find(p=>p.uid===u.id&&p.window==='2');
+      if(!w1&&!w2)return'';
+      const tpts=calcTournPts(u.id);
+      return`<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-weight:600;font-size:13px">${u.name}</span>
+          <span style="color:var(--accent);font-weight:700;font-size:13px">${tpts>0?'+'+tpts+' pts':tpts?tpts+' pts':'pending'}</span>
+        </div>
+        ${TOURN_FIELDS.map(f=>{
+          const v1=w1?w1[f.key]:'—';
+          const v2=w2?w2[f.key]:null;
+          const changed=v2&&v2!==v1;
+          return`<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:1px 0">
+            <span>${f.label}</span>
+            <span>${changed?`<s>${v1}</s> → ${v2}`:v1}${w2?'':''}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).filter(Boolean).join('');
+  }
+}
+
+async function saveTournWindows(){
+  const vals={
+    w1_open: document.getElementById('tw1_open').value.slice(0,16),
+    w1_close:document.getElementById('tw1_close').value.slice(0,16),
+    w2_open: document.getElementById('tw2_open').value.slice(0,16),
+    w2_close:document.getElementById('tw2_close').value.slice(0,16),
+  };
+  if(!vals.w1_open||!vals.w1_close||!vals.w2_open||!vals.w2_close){toast('Fill all window dates','err');return;}
+  Object.assign(DB.tournCfg,vals);
+  toast('Saving…','');
+  try{
+    await apiCall({action:'setTournWindow',...vals});
+    toast('Windows saved ✓','ok');
+  }catch(e){toast('Save failed','err');}
+}
+
+async function saveTournOutcomes(){
+  const vals={
+    champion:   document.getElementById('out_champion').value,
+    runners_up: document.getElementById('out_runners_up').value,
+    golden_boot:document.getElementById('out_golden_boot').value,
+    golden_glove:document.getElementById('out_golden_glove').value,
+  };
+  if(!vals.champion||!vals.runners_up||!vals.golden_boot||!vals.golden_glove){toast('Select all outcomes','err');return;}
+  DB.tournCfg.tourn_champion=vals.champion;
+  DB.tournCfg.tourn_runners_up=vals.runners_up;
+  DB.tournCfg.tourn_golden_boot=vals.golden_boot;
+  DB.tournCfg.tourn_golden_glove=vals.golden_glove;
+  toast('Saving…','');
+  try{
+    await apiCall({action:'setTournResult',...vals});
+    toast('Outcomes saved ✓','ok');
+    renderTournAdmin();
+  }catch(e){toast('Save failed','err');}
+}
+
+async function addTournOpt(type){
+  const val=prompt(`Enter ${type} name:`);
+  if(!val||!val.trim())return;
+  const v=val.trim();
+  if(DB.tournOptions.find(o=>o.type===type&&o.value===v)){toast('Already exists','err');return;}
+  DB.tournOptions.push({type,value:v});
+  renderTournAdmin();
+  renderTournCard();
+  try{
+    await apiCall({action:'addTournOption',type,value:v});
+    toast(`${type} added ✓`,'ok');
+  }catch(e){
+    toast('Save failed','err');
+    DB.tournOptions=DB.tournOptions.filter(o=>!(o.type===type&&o.value===v));
+    renderTournAdmin();
+  }
+}
+
+async function delTournOpt(type,value){
+  if(!confirm(`Remove "${value}"?`))return;
+  DB.tournOptions=DB.tournOptions.filter(o=>!(o.type===type&&o.value===value));
+  renderTournAdmin();
+  renderTournCard();
+  try{
+    await apiCall({action:'delTournOption',type,value});
+    toast('Removed ✓','ok');
+  }catch(e){
+    toast('Remove failed','err');
+    DB.tournOptions.push({type,value});
+    renderTournAdmin();
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -867,14 +1205,28 @@ function adminLogout(){adminOpen=false;renderAdmin();}
 function aTab(t,btn){
   document.querySelectorAll('.atab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  ['aResults','aMatches','aPlayers','aSettings'].forEach(id=>document.getElementById(id).style.display='none');
-  const map={results:'aResults',matches:'aMatches',players:'aPlayers',settings:'aSettings'};
+  ['aResults','aMatches','aPlayers','aTournament','aSettings'].forEach(id=>document.getElementById(id).style.display='none');
+  const map={results:'aResults',matches:'aMatches',players:'aPlayers',tournament:'aTournament',settings:'aSettings'};
   document.getElementById(map[t]).style.display='block';
+  if(t==='tournament') renderTournAdmin();
 }
 
 function lbTab(sort,btn){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');lbSort=sort;renderLB(sort);
+}
+
+function checkPenDraw(mid){
+  const s1=parseInt(document.getElementById('s1-'+mid).value);
+  const s2=parseInt(document.getElementById('s2-'+mid).value);
+  const row=document.getElementById('pen-row-'+mid);
+  if(!row)return;
+  if(!isNaN(s1)&&!isNaN(s2)&&s1===s2){
+    row.style.display='block';
+  }else{
+    row.style.display='none';
+    document.getElementById('pen-'+mid).value='';
+  }
 }
 
 async function submitPred(mid){
@@ -885,19 +1237,22 @@ async function submitPred(mid){
   if(isNaN(s1)||isNaN(s2)||s1<0||s2<0){toast('Enter scores for both teams','err');return;}
   const m=allMatches().find(x=>x.id===mid);
   if(!m||isLocked(m)){toast('Predictions are locked','err');return;}
+  const ko=KO_ROUNDS.has(m.group);
+  const pen=ko&&s1===s2?(document.getElementById('pen-'+mid)?.value||''):'';
+  if(ko&&s1===s2&&!pen){toast('Select who wins on penalties','err');return;}
 
   // Optimistic update
-  DB.preds = DB.preds.filter(p=>!(p.uid===me.id&&p.mid===mid));
-  DB.preds.push({uid:me.id,mid,s1,s2,ts:Date.now()});
+  DB.preds=DB.preds.filter(p=>!(p.uid===me.id&&p.mid===mid));
+  DB.preds.push({uid:me.id,mid,s1,s2,ts:Date.now(),pen});
   renderPredict();
   toast('Saving…','');
 
-  try {
-    await apiCall({action:'savePred',uid:me.id,mid,s1,s2,ts:Date.now()});
-    toast(`Saved: ${s1}–${s2} ✓`,'ok');
-  } catch(e) {
+  try{
+    await apiCall({action:'savePred',uid:me.id,mid,s1,s2,ts:Date.now(),pen});
+    toast(`Saved: ${s1}–${s2}${pen?' · '+pen:''} ✓`,'ok');
+  }catch(e){
     toast('Save failed – check connection','err');
-    DB.preds = DB.preds.filter(p=>!(p.uid===me.id&&p.mid===mid));
+    DB.preds=DB.preds.filter(p=>!(p.uid===me.id&&p.mid===mid));
     renderPredict();
   }
 }
@@ -916,17 +1271,34 @@ async function clearPred(mid){
   }
 }
 
+function checkAdminPenDraw(mid,t1,t2){
+  const s1=parseInt(document.getElementById('r1-'+mid).value);
+  const s2=parseInt(document.getElementById('r2-'+mid).value);
+  const row=document.getElementById('rpen-row-'+mid);
+  if(!row)return;
+  if(!isNaN(s1)&&!isNaN(s2)&&s1===s2){
+    row.style.display='block';
+  }else{
+    row.style.display='none';
+    document.getElementById('rpen-'+mid).value='';
+  }
+}
+
 async function saveResult(mid){
   const s1=parseInt(document.getElementById('r1-'+mid).value);
   const s2=parseInt(document.getElementById('r2-'+mid).value);
   if(isNaN(s1)||isNaN(s2)||s1<0||s2<0){toast('Enter valid scores','err');return;}
-  DB.results[mid]={s1,s2};
+  const m=allMatches().find(x=>x.id===mid);
+  const ko=m?KO_ROUNDS.has(m.group):false;
+  const pen=ko&&s1===s2?(document.getElementById('rpen-'+mid)?.value||''):'';
+  if(ko&&s1===s2&&!pen){toast('Select penalty winner','err');return;}
+  DB.results[mid]={s1,s2,pen};
   renderAdminResults();
   toast('Saving…','');
-  try {
-    await apiCall({action:'saveResult',mid,s1,s2});
+  try{
+    await apiCall({action:'saveResult',mid,s1,s2,pen});
     toast('Result saved ✓','ok');
-  } catch(e) {
+  }catch(e){
     toast('Save failed – check connection','err');
   }
 }
@@ -1020,6 +1392,159 @@ async function changePw(){
 // ═══════════════════════════════════════════════
 //  USER MODAL
 // ═══════════════════════════════════════════════
+function openHelpModal(){
+  document.getElementById('helpModal').classList.add('open');
+}
+function openRulesModal(){
+  document.getElementById('rulesModal').classList.add('open');
+}
+
+const TOURN_FIELDS=[
+  {key:'champion',    label:'🥇 Champion',    opts:'team'},
+  {key:'runners_up',  label:'🥈 Runners-up',  opts:'team'},
+  {key:'golden_boot', label:'👟 Golden Boot',  opts:'player'},
+  {key:'golden_glove',label:'🧤 Golden Glove', opts:'player'},
+];
+const TOURN_W1_PTS={champion:30,runners_up:18,golden_boot:15,golden_glove:15};
+const TOURN_W2_PTS={champion:15,runners_up:8, golden_boot:8, golden_glove:8};
+
+function getTournWindowState(){
+  const cfg=DB.tournCfg;
+  const now=new Date();
+  const parse=s=>s?new Date(s.length===16?s+':00+05:30':s):null;
+  const w1o=parse(cfg.w1_open),w1c=parse(cfg.w1_close);
+  const w2o=parse(cfg.w2_open),w2c=parse(cfg.w2_close);
+  if(!w1o||now<w1o) return 'coming_soon';
+  if(w1c&&now>w1c){
+    if(!w2o||now<w2o) return 'between_windows';
+    if(w2c&&now>w2c) return 'closed';
+    return 'w2_open';
+  }
+  return 'w1_open';
+}
+
+function _tournOpts(type,sel){
+  const items=DB.tournOptions.filter(o=>o.type===type).map(o=>o.value);
+  const placeholder=type==='team'?'— Select team —':'— Select player —';
+  return`<option value="">${placeholder}</option>`+items.map(v=>`<option value="${v}"${v===sel?' selected':''}>${v}</option>`).join('');
+}
+
+function _tournForm(windowNum,prefill){
+  return TOURN_FIELDS.map(f=>`
+    <div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:3px">${f.label}</div>
+      <select id="tp-${f.key}" style="width:100%;padding:8px;border-radius:8px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:13px;appearance:auto">
+        ${_tournOpts(f.opts,prefill?prefill[f.key]:'')}
+      </select>
+    </div>`).join('');
+}
+
+function _tournSubmittedHtml(w1,w2){
+  if(!w1) return`<div style="font-size:12px;color:var(--muted);text-align:center;padding:16px">No predictions submitted.</div>`;
+  const badge=w2
+    ?`<div style="font-size:11px;color:var(--green);margin-bottom:8px">✅ W1 Submitted · ✅ W2 Submitted</div>`
+    :`<div style="font-size:11px;color:var(--green);margin-bottom:8px">✅ W1 Submitted</div>`;
+  const rows=TOURN_FIELDS.map(f=>{
+    const v1=w1[f.key]||'—';
+    const v2=w2?w2[f.key]||'—':null;
+    const changed=v2&&v2!==v1;
+    const pts=w2?(changed?TOURN_W2_PTS[f.key]:TOURN_W1_PTS[f.key]):TOURN_W1_PTS[f.key];
+    const valHtml=changed
+      ?`<span style="text-decoration:line-through;color:var(--muted);font-size:11px">${v1}</span> → <span style="color:var(--text);font-weight:600">${v2}</span>`
+      :`<span style="color:var(--text);font-weight:600">${v1}</span>`;
+    return`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;border-bottom:1px solid var(--border)">
+      <span style="color:var(--muted)">${f.label}</span>
+      <div style="display:flex;align-items:center;gap:8px">${valHtml}<span style="color:var(--accent);font-weight:700;min-width:32px;text-align:right">${pts}p</span></div>
+    </div>`;
+  }).join('');
+  return badge+`<div>${rows}</div>`;
+}
+
+function renderTournCard(){
+  const el=document.getElementById('tournCard');
+  if(!el)return;
+  const me=getMe();
+  const state=getTournWindowState();
+  const myW1=me?DB.tournPreds.find(p=>p.uid===me.id&&p.window==='1'):null;
+  const myW2=me?DB.tournPreds.find(p=>p.uid===me.id&&p.window==='2'):null;
+  const title=`<div style="font-weight:700;color:var(--text);margin-bottom:10px;font-size:13px">🏆 Tournament Predictions</div>`;
+  const ghostRows=`<div style="display:flex;flex-direction:column;gap:10px;opacity:0.4;pointer-events:none">${TOURN_FIELDS.map(f=>`<div style="display:flex;justify-content:space-between;font-size:12px"><span>${f.label}</span><span style="color:var(--muted)">— —</span></div>`).join('')}</div>`;
+
+  if(state==='coming_soon'){
+    el.innerHTML=title+ghostRows+`
+      <div style="margin-top:12px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--gold);text-align:center;line-height:1.6">
+        ⏳ Opens for Predictions soon<br><span style="color:var(--muted)">click 📢 for details</span></div>`;
+    return;
+  }
+
+  if(state==='between_windows'){
+    el.innerHTML=title+(myW1?_tournSubmittedHtml(myW1,null):`<div style="font-size:12px;color:var(--muted);text-align:center;padding:16px">Window 1 closed. Window 2 opens soon.</div>`);
+    return;
+  }
+
+  if(state==='closed'){
+    el.innerHTML=title+_tournSubmittedHtml(myW1,myW2);
+    return;
+  }
+
+  if(state==='w1_open'){
+    if(!me){
+      el.innerHTML=title+ghostRows+`<div style="margin-top:10px;font-size:12px;text-align:center;color:var(--muted)"><a href="#" onclick="openUserModal();return false" style="color:var(--accent)">Sign in</a> to submit</div>
+        <div style="margin-top:8px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open</div>`;
+      return;
+    }
+    if(myW1){el.innerHTML=title+_tournSubmittedHtml(myW1,null);return;}
+    el.innerHTML=title+`
+      <div style="margin-bottom:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open</div>
+      <div style="display:flex;flex-direction:column;gap:8px">${_tournForm(1,null)}</div>
+      <button class="btn btn-primary" style="margin-top:12px;font-size:13px;padding:10px" onclick="submitTournPred(1)">Submit W1 Predictions</button>`;
+    return;
+  }
+
+  if(state==='w2_open'){
+    if(!me){
+      el.innerHTML=title+(myW1?_tournSubmittedHtml(myW1,null):ghostRows)+`
+        <div style="margin-top:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold);text-align:center">🟡 Window 2 open</div>`;
+      return;
+    }
+    if(myW2){el.innerHTML=title+_tournSubmittedHtml(myW1,myW2);return;}
+    const w1summary=myW1?`
+      <div style="background:var(--card2);border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px">
+        <div style="color:var(--muted);margin-bottom:6px;font-size:11px">✅ W1 Submitted</div>
+        ${TOURN_FIELDS.map(f=>`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:var(--muted)">${f.label}</span><span style="font-weight:600">${myW1[f.key]||'—'}</span></div>`).join('')}
+      </div>`:'';
+    el.innerHTML=title+w1summary+`
+      <div style="margin-bottom:10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold);text-align:center">🟡 Window 2 open · changed picks use W2 pts</div>
+      <div style="display:flex;flex-direction:column;gap:8px">${_tournForm(2,myW1)}</div>
+      <button class="btn btn-primary" style="margin-top:12px;font-size:13px;padding:10px" onclick="submitTournPred(2)">Submit W2 Predictions</button>`;
+    return;
+  }
+}
+
+async function submitTournPred(windowNum){
+  const me=getMe();
+  if(!me){openUserModal();return;}
+  const vals={};
+  for(const f of TOURN_FIELDS){
+    vals[f.key]=document.getElementById('tp-'+f.key)?.value||'';
+    if(!vals[f.key]){toast(`Select ${f.label}`,'err');return;}
+  }
+  const ts=new Date().toISOString();
+  const w=String(windowNum);
+  DB.tournPreds=DB.tournPreds.filter(p=>!(p.uid===me.id&&p.window===w));
+  DB.tournPreds.push({uid:me.id,...vals,window:w,ts});
+  renderTournCard();
+  toast('Saving…','');
+  try{
+    await apiCall({action:'saveTournPred',uid:me.id,window:w,...vals,ts});
+    toast('Tournament predictions saved ✓','ok');
+  }catch(e){
+    toast('Save failed – check connection','err');
+    DB.tournPreds=DB.tournPreds.filter(p=>!(p.uid===me.id&&p.window===w));
+    renderTournCard();
+  }
+}
+
 function openUserModal(){
   const me=getMe();
   const sel=document.getElementById('userSelect');
@@ -1125,13 +1650,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     showLoading(true, '⚙️ Set SCRIPT_URL in index.html to connect Google Sheets');
     return;
   }
+  renderTournCard();
   const ok = await loadAll(false);
   if (ok) {
     updateChip();
     renderHome();
+    renderTournCard();
     startAutoRefresh();
   }
   document.getElementById('userModal').addEventListener('click', function(e){ if(e.target===this) closeUserModal(); });
+  document.getElementById('helpModal').addEventListener('click', function(e){ if(e.target===this) document.getElementById('helpModal').classList.remove('open'); });
+  document.getElementById('rulesModal').addEventListener('click', function(e){ if(e.target===this) document.getElementById('rulesModal').classList.remove('open'); });
 });
 </script>
 </body>
