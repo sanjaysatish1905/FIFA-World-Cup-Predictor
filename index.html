@@ -309,7 +309,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
         <span>Teams &amp; Players</span>
         <div style="display:flex;gap:6px">
           <button class="btn btn-sm btn-ghost" onclick="addTournOpt('team')">+ Team</button>
-          <button class="btn btn-sm btn-ghost" onclick="addTournOpt('player')">+ Player</button>
+          <button class="btn btn-sm btn-ghost" onclick="addTournOpt('golden_boot')">+ Boot</button>
+          <button class="btn btn-sm btn-ghost" onclick="addTournOpt('golden_glove')">+ Glove</button>
         </div>
       </div>
       <div class="card" id="tournOptsList"></div>
@@ -1031,7 +1032,8 @@ function renderTournAdmin(){
   });
   // Populate outcome dropdowns
   const teams=DB.tournOptions.filter(o=>o.type==='team').map(o=>o.value);
-  const players=DB.tournOptions.filter(o=>o.type==='player').map(o=>o.value);
+  const bootPlayers=DB.tournOptions.filter(o=>o.type==='golden_boot').map(o=>o.value);
+  const glovePlayers=DB.tournOptions.filter(o=>o.type==='golden_glove').map(o=>o.value);
   function fillSel(id,items,cur){
     const el=document.getElementById(id);
     if(!el)return;
@@ -1039,26 +1041,27 @@ function renderTournAdmin(){
   }
   fillSel('out_champion',  teams,  cfg.tourn_champion||'');
   fillSel('out_runners_up',teams,  cfg.tourn_runners_up||'');
-  fillSel('out_golden_boot',players,cfg.tourn_golden_boot||'');
-  fillSel('out_golden_glove',players,cfg.tourn_golden_glove||'');
+  fillSel('out_golden_boot',bootPlayers,cfg.tourn_golden_boot||'');
+  fillSel('out_golden_glove',glovePlayers,cfg.tourn_golden_glove||'');
   // TournOptions list
   const optEl=document.getElementById('tournOptsList');
   if(!DB.tournOptions.length){
     optEl.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px">No teams or players added yet</div>';
   }else{
-    const grouped={team:[],player:[]};
-    DB.tournOptions.forEach(o=>grouped[o.type]?.push(o.value));
+    const grouped={team:[],golden_boot:[],golden_glove:[]};
+    DB.tournOptions.forEach(o=>{if(grouped[o.type])grouped[o.type].push(o.value);});
+    const sections=[
+      {type:'team',       label:'Teams'},
+      {type:'golden_boot', label:'Golden Boot Nominees'},
+      {type:'golden_glove',label:'Golden Glove Nominees'},
+    ];
     let html='';
-    if(grouped.team.length){
-      html+=`<div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px">Teams</div>`;
-      html+=grouped.team.map(v=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px">
-        <span>${v}</span><button class="btn btn-sm btn-red" style="padding:4px 10px" onclick="delTournOpt('team','${v}')">✕</button></div>`).join('');
-    }
-    if(grouped.player.length){
-      html+=`<div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin:12px 0 6px">Players</div>`;
-      html+=grouped.player.map(v=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px">
-        <span>${v}</span><button class="btn btn-sm btn-red" style="padding:4px 10px" onclick="delTournOpt('player','${v}')">✕</button></div>`).join('');
-    }
+    sections.forEach((s,i)=>{
+      if(!grouped[s.type].length)return;
+      html+=`<div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin:${i>0?'12px':0} 0 6px">${s.label}</div>`;
+      html+=grouped[s.type].map(v=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px">
+        <span>${v}</span><button class="btn btn-sm btn-red" style="padding:4px 10px" onclick="delTournOpt('${s.type}','${v}')">✕</button></div>`).join('');
+    });
     optEl.innerHTML=html;
   }
   // Player submissions
@@ -1402,8 +1405,8 @@ function openRulesModal(){
 const TOURN_FIELDS=[
   {key:'champion',    label:'🥇 Champion',    opts:'team'},
   {key:'runners_up',  label:'🥈 Runners-up',  opts:'team'},
-  {key:'golden_boot', label:'👟 Golden Boot',  opts:'player'},
-  {key:'golden_glove',label:'🧤 Golden Glove', opts:'player'},
+  {key:'golden_boot', label:'👟 Golden Boot',  opts:'golden_boot'},
+  {key:'golden_glove',label:'🧤 Golden Glove', opts:'golden_glove'},
 ];
 const TOURN_W1_PTS={champion:30,runners_up:18,golden_boot:15,golden_glove:15};
 const TOURN_W2_PTS={champion:15,runners_up:8, golden_boot:8, golden_glove:8};
@@ -1425,7 +1428,7 @@ function getTournWindowState(){
 
 function _tournOpts(type,sel){
   const items=DB.tournOptions.filter(o=>o.type===type).map(o=>o.value);
-  const placeholder=type==='team'?'— Select team —':'— Select player —';
+  const placeholder=type==='team'?'— Select team —':'— Select nominee —';
   return`<option value="">${placeholder}</option>`+items.map(v=>`<option value="${v}"${v===sel?' selected':''}>${v}</option>`).join('');
 }
 
