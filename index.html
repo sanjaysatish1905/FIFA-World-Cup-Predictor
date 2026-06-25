@@ -1493,14 +1493,14 @@ function renderTournCard(){
   if(state==='w1_open'){
     if(!me){
       el.innerHTML=title+ghostRows+`<div style="margin-top:10px;font-size:12px;text-align:center;color:var(--muted)"><a href="#" onclick="openUserModal();return false" style="color:var(--accent)">Sign in</a> to submit</div>
-        <div style="margin-top:8px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open</div>`;
+        <div style="margin-top:8px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open · Closes at 00:30 AM 29th June</div>`;
       return;
     }
     if(myW1){el.innerHTML=title+_tournSubmittedHtml(myW1,null);return;}
     el.innerHTML=title+`
-      <div style="margin-bottom:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open</div>
+      <div style="margin-bottom:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open · Closes at 00:30 AM 29th June</div>
       <div style="display:flex;flex-direction:column;gap:8px">${_tournForm(1,null)}</div>
-      <button class="btn btn-primary" style="margin-top:12px;font-size:13px;padding:10px" onclick="submitTournPred(1)">Submit W1 Predictions</button>`;
+      <button class="btn btn-primary" style="margin-top:12px;font-size:13px;padding:10px" onclick="submitTournPred(1)">Submit Predictions</button>`;
     return;
   }
 
@@ -1519,7 +1519,7 @@ function renderTournCard(){
     el.innerHTML=title+w1summary+`
       <div style="margin-bottom:10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold);text-align:center">🟡 Window 2 open · changed picks use W2 pts</div>
       <div style="display:flex;flex-direction:column;gap:8px">${_tournForm(2,myW1)}</div>
-      <button class="btn btn-primary" style="margin-top:12px;font-size:13px;padding:10px" onclick="submitTournPred(2)">Submit W2 Predictions</button>`;
+      <button class="btn btn-primary" style="margin-top:12px;font-size:13px;padding:10px" onclick="submitTournPred(2)">Submit Predictions</button>`;
     return;
   }
 }
