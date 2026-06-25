@@ -1445,8 +1445,8 @@ function _tournForm(windowNum,prefill){
 function _tournSubmittedHtml(w1,w2){
   if(!w1) return`<div style="font-size:12px;color:var(--muted);text-align:center;padding:16px">No predictions submitted.</div>`;
   const badge=w2
-    ?`<div style="font-size:11px;color:var(--green);margin-bottom:8px">✅ W1 Submitted · ✅ W2 Submitted</div>`
-    :`<div style="font-size:11px;color:var(--green);margin-bottom:8px">✅ W1 Submitted</div>`;
+    ?`<div style="font-size:11px;color:var(--green);margin-bottom:8px">✅ Submitted in W1· ✅ Submitted in W2</div>`
+    :`<div style="font-size:11px;color:var(--green);margin-bottom:8px">✅ Submitted in W1</div>`;
   const rows=TOURN_FIELDS.map(f=>{
     const v1=w1[f.key]||'—';
     const v2=w2?w2[f.key]||'—':null;
@@ -1493,33 +1493,36 @@ function renderTournCard(){
   if(state==='w1_open'){
     if(!me){
       el.innerHTML=title+ghostRows+`<div style="margin-top:10px;font-size:12px;text-align:center;color:var(--muted)"><a href="#" onclick="openUserModal();return false" style="color:var(--accent)">Sign in</a> to submit</div>
-        <div style="margin-top:8px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open · Closes at 00:30 AM 29th June</div>`;
+        <div style="margin-top:8px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open · 30/18/15/15 pts</div>`;
       return;
     }
-    if(myW1){el.innerHTML=title+_tournSubmittedHtml(myW1,null);return;}
+    const lastSaved=myW1?`<div style="font-size:11px;color:var(--muted);text-align:right;margin-bottom:6px">Last saved: ${new Date(myW1.ts).toLocaleString('en-IN',{dateStyle:'short',timeStyle:'short'})}</div>`:'';
     el.innerHTML=title+`
-      <div style="margin-bottom:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open · Closes at 00:30 AM 29th June</div>
-      <div style="display:flex;flex-direction:column;gap:8px">${_tournForm(1,null)}</div>
-      <button class="btn btn-primary" style="margin-top:12px;font-size:13px;padding:10px" onclick="submitTournPred(1)">Submit Predictions</button>`;
+      <div style="margin-bottom:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open · 30/18/15/15 pts · editable until window closes</div>
+      ${lastSaved}
+      <div style="display:flex;flex-direction:column;gap:8px">${_tournForm(1,myW1)}</div>
+      <button class="btn btn-primary" style="margin-top:12px;font-size:13px;padding:10px" onclick="submitTournPred(1)">${myW1?'Update':'Submit'} Window 1 Predictions</button>`;
     return;
   }
 
   if(state==='w2_open'){
     if(!me){
       el.innerHTML=title+(myW1?_tournSubmittedHtml(myW1,null):ghostRows)+`
-        <div style="margin-top:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold);text-align:center">🟡 Window 2 open</div>`;
+        <div style="margin-top:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold);text-align:center">🟡 Window 2 open · 15/8/8/8 pts</div>`;
       return;
     }
-    if(myW2){el.innerHTML=title+_tournSubmittedHtml(myW1,myW2);return;}
+    const prefill=myW2||myW1;
+    const lastSaved=myW2?`<div style="font-size:11px;color:var(--muted);text-align:right;margin-bottom:6px">Last saved: ${new Date(myW2.ts).toLocaleString('en-IN',{dateStyle:'short',timeStyle:'short'})}</div>`:'';
     const w1summary=myW1?`
       <div style="background:var(--card2);border-radius:8px;padding:10px;margin-bottom:10px;font-size:12px">
-        <div style="color:var(--muted);margin-bottom:6px;font-size:11px">✅ W1 Submitted</div>
+        <div style="color:var(--muted);margin-bottom:6px;font-size:11px">✅ Window 1 Locked</div>
         ${TOURN_FIELDS.map(f=>`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:var(--muted)">${f.label}</span><span style="font-weight:600">${myW1[f.key]||'—'}</span></div>`).join('')}
       </div>`:'';
     el.innerHTML=title+w1summary+`
-      <div style="margin-bottom:10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold);text-align:center">🟡 Window 2 open · changed picks use W2 pts</div>
-      <div style="display:flex;flex-direction:column;gap:8px">${_tournForm(2,myW1)}</div>
-      <button class="btn btn-primary" style="margin-top:12px;font-size:13px;padding:10px" onclick="submitTournPred(2)">Submit Predictions</button>`;
+      <div style="margin-bottom:10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold);text-align:center">🟡 Window 2 open · changed picks get reduced pts · 15/8/8/8 pts</div>
+      ${lastSaved}
+      <div style="display:flex;flex-direction:column;gap:8px">${_tournForm(2,prefill)}</div>
+      <button class="btn btn-primary" style="margin-top:12px;font-size:13px;padding:10px" onclick="submitTournPred(2)">${myW2?'Update':'Submit'} Window 2 Predictions</button>`;
     return;
   }
 }
