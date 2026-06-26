@@ -357,6 +357,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
   <button class="nbtn" onclick="nav('admin')" id="nb-admin"><span class="ico">⚙️</span>Admin</button>
 </nav>
 
+<!-- HEATMAP CELL POPUP -->
+<div id="heatmapPopup" style="display:none;position:fixed;z-index:999;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,0.5);pointer-events:none;max-width:180px;text-align:center"></div>
+
 <!-- HOW TO PLAY MODAL -->
 <div class="overlay" id="helpModal">
   <div class="modal">
@@ -1279,9 +1282,9 @@ function renderHeatmap(){
     const cells=sortedUsers.map(u=>{
       const p=preds.find(x=>x.uid===u.id&&x.mid===m.id);
       if(!p) return`<td style="${cellBase}background:rgba(255,255,255,0.03);color:var(--muted)">—</td>`;
-      if(!result) return`<td style="${cellBase}background:rgba(59,130,246,0.1);color:var(--accent)" title="${p.s1}–${p.s2}">•</td>`;
+      if(!result) return`<td style="${cellBase}background:rgba(59,130,246,0.1);color:var(--accent);cursor:pointer" onclick="showHeatmapTip(this,'${u.name}','${m.t1} v ${m.t2}','${p.s1}–${p.s2}','pending')">•</td>`;
       const pts=calcPts(p,result,ko);
-      return`<td style="${cellBase}${cellStyle(pts,true,true)}" title="${p.s1}–${p.s2} · ${pts}pts">${pts}</td>`;
+      return`<td style="${cellBase}${cellStyle(pts,true,true)};cursor:pointer" onclick="showHeatmapTip(this,'${u.name}','${m.t1} v ${m.t2}','${p.s1}–${p.s2}','${pts}pts')">${pts}</td>`;
     }).join('');
     return`<tr><td style="${matchHdBase}border-right:1px solid var(--border)">${matchLabel}</td>${cells}</tr>`;
   }).join('');
@@ -1494,6 +1497,25 @@ async function changePw(){
 // ═══════════════════════════════════════════════
 //  USER MODAL
 // ═══════════════════════════════════════════════
+function showHeatmapTip(cell, player, match, pred, pts){
+  const popup=document.getElementById('heatmapPopup');
+  popup.innerHTML=`<div style="font-weight:700;color:var(--text)">${player}</div>
+    <div style="color:var(--muted);font-size:11px;margin:2px 0">${match}</div>
+    <div style="font-size:15px;font-weight:800;color:var(--accent);margin-top:4px">${pred}</div>
+    <div style="font-size:12px;color:var(--muted)">${pts}</div>`;
+  const rect=cell.getBoundingClientRect();
+  const pw=180, ph=90;
+  let top=rect.bottom+8, left=rect.left+(rect.width/2)-(pw/2);
+  if(top+ph>window.innerHeight) top=rect.top-ph-8;
+  if(left<8) left=8;
+  if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
+  popup.style.top=top+'px';
+  popup.style.left=left+'px';
+  popup.style.display='block';
+  clearTimeout(popup._t);
+  popup._t=setTimeout(()=>popup.style.display='none',2500);
+}
+
 function openHelpModal(){
   document.getElementById('helpModal').classList.add('open');
 }
