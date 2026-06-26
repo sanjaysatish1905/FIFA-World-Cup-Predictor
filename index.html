@@ -215,10 +215,12 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
     <button class="tab active" onclick="lbTab('pts',this)">Points</button>
     <button class="tab" onclick="lbTab('acc',this)">Accuracy</button>
     <button class="tab" onclick="lbTab('exact',this)">Exact Scores</button>
+    <button class="tab" onclick="lbTab('heatmap',this)">🔥 Heatmap</button>
   </div>
   <div class="card" id="fullLB">
     <div class="empty"><div class="eico">🏆</div><p>No predictions yet</p></div>
   </div>
+  <div id="heatmapLB" style="display:none;overflow-x:auto;-webkit-overflow-scrolling:touch"></div>
 </div>
 
 <!-- ADMIN -->
@@ -1216,7 +1218,101 @@ function aTab(t,btn){
 
 function lbTab(sort,btn){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');lbSort=sort;renderLB(sort);
+  btn.classList.add('active');
+  lbSort=sort;
+  const isHeatmap=sort==='heatmap';
+  document.getElementById('fullLB').style.display=isHeatmap?'none':'block';
+  document.getElementById('heatmapLB').style.display=isHeatmap?'block':'none';
+  if(isHeatmap) renderHeatmap();
+  else renderLB(sort);
+}
+
+function renderHeatmap(){
+  const el=document.getElementById('heatmapLB');
+  const users=getUsers();
+  const preds=getPreds();
+  const res=getResults();
+  const matches=[...allMatches()]
+    .filter(m=>isLocked(m))
+    .sort((a,b)=>parseIST(a.ist)-parseIST(b.ist));
+
+  if(!matches.length){
+    el.innerHTML='<div class="empty" style="padding:24px"><div class="eico">🔥</div><p>No locked matches yet</p></div>';
+    return;
+  }
+  if(!users.length){
+    el.innerHTML='<div class="empty" style="padding:24px"><div class="eico">👥</div><p>No players yet</p></div>';
+    return;
+  }
+
+  // Sort users by total pts descending for column order
+  const lb=calcLB();
+  const sortedUsers=lb.map(e=>users.find(u=>u.id===e.id)).filter(Boolean);
+
+  // Cell color based on points
+  function cellStyle(pts,hasPred,hasResult){
+    if(!hasPred) return'background:rgba(255,255,255,0.03);color:var(--muted)';
+    if(!hasResult) return'background:rgba(59,130,246,0.1);color:var(--accent)'; // pending
+    if(pts>=5)  return'background:rgba(16,185,129,0.25);color:#6ee7b7';   // exact
+    if(pts===4) return'background:rgba(245,158,11,0.25);color:#fcd34d';   // correct GD
+    if(pts===3) return'background:rgba(245,158,11,0.15);color:#fbbf24';   // correct result
+    return       'background:rgba(239,68,68,0.15);color:#fca5a5';         // wrong
+  }
+
+  const cellBase='padding:6px 4px;text-align:center;font-size:12px;font-weight:700;border-bottom:1px solid rgba(255,255,255,0.05);white-space:nowrap;';
+  const MATCH_COL_W=120, PLAYER_COL_W=56;
+  const tableMinW=MATCH_COL_W+sortedUsers.length*PLAYER_COL_W;
+  const hdBase=`width:${PLAYER_COL_W}px;padding:8px 4px;font-size:11px;font-weight:700;text-align:center;background:var(--card2);border-bottom:2px solid var(--border);overflow:hidden;text-overflow:ellipsis;`;
+  const matchHdBase=`width:${MATCH_COL_W}px;padding:6px 8px;font-size:11px;font-weight:600;background:var(--card2);border-bottom:1px solid var(--border);position:sticky;left:0;z-index:2;`;
+
+  // Header row
+  let thead=`<tr>
+    <th style="${matchHdBase}border-right:1px solid var(--border)">Match</th>
+    ${sortedUsers.map(u=>`<th style="${hdBase}" title="${u.name}">${u.name.split(' ')[0]}</th>`).join('')}
+  </tr>`;
+
+  // Data rows
+  let tbody=matches.map(m=>{
+    const ko=KO_ROUNDS.has(m.group);
+    const result=res[m.id];
+    const matchLabel=`<div style="font-weight:700;font-size:11px">${m.t1} v ${m.t2}</div><div style="font-size:10px;color:var(--muted);margin-top:1px">${m.group} · ${fmtDate(m)}</div>`;
+    const cells=sortedUsers.map(u=>{
+      const p=preds.find(x=>x.uid===u.id&&x.mid===m.id);
+      if(!p) return`<td style="${cellBase}background:rgba(255,255,255,0.03);color:var(--muted)">—</td>`;
+      if(!result) return`<td style="${cellBase}background:rgba(59,130,246,0.1);color:var(--accent)" title="${p.s1}–${p.s2}">•</td>`;
+      const pts=calcPts(p,result,ko);
+      return`<td style="${cellBase}${cellStyle(pts,true,true)}" title="${p.s1}–${p.s2} · ${pts}pts">${pts}</td>`;
+    }).join('');
+    return`<tr><td style="${matchHdBase}border-right:1px solid var(--border)">${matchLabel}</td>${cells}</tr>`;
+  }).join('');
+
+  // Totals row
+  const totals=sortedUsers.map(u=>{
+    const e=lb.find(x=>x.id===u.id);
+    return`<td style="${cellBase}background:var(--card2);color:var(--accent);font-size:13px;border-top:2px solid var(--border)">${e?.pts||0}</td>`;
+  }).join('');
+  const tfoot=`<tr>
+    <td style="${matchHdBase}border-right:1px solid var(--border);border-top:2px solid var(--border);color:var(--text);font-size:11px">TOTAL</td>
+    ${totals}
+  </tr>`;
+
+  el.innerHTML=`
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;display:flex;gap:12px;flex-wrap:wrap">
+      <span style="color:#6ee7b7">■ Exact</span>
+      <span style="color:#fcd34d">■ Correct GD</span>
+      <span style="color:#fbbf24">■ Correct result</span>
+      <span style="color:#fca5a5">■ Wrong</span>
+      <span style="color:var(--accent)">■ Pending</span>
+      <span style="color:var(--muted)">■ No pick</span>
+    </div>
+    <div style="overflow-x:auto;border-radius:10px;border:1px solid var(--border)">
+      <table style="border-collapse:collapse;table-layout:fixed;width:100%;min-width:${tableMinW}px">
+        <thead>${thead}</thead>
+        <tbody>${tbody}</tbody>
+        <tfoot>${tfoot}</tfoot>
+      </table>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-top:8px;text-align:center">Tap a cell to see prediction · columns sorted by total points</div>`;
 }
 
 function checkPenDraw(mid){
@@ -1235,6 +1331,8 @@ function checkPenDraw(mid){
 async function submitPred(mid){
   const me=getMe();
   if(!me){openUserModal();return;}
+  const btn=document.querySelector(`#mc-${mid} .submit-btn`);
+  if(btn&&btn.disabled)return;
   const s1=parseInt(document.getElementById('s1-'+mid).value);
   const s2=parseInt(document.getElementById('s2-'+mid).value);
   if(isNaN(s1)||isNaN(s2)||s1<0||s2<0){toast('Enter scores for both teams','err');return;}
@@ -1244,6 +1342,7 @@ async function submitPred(mid){
   const pen=ko&&s1===s2?(document.getElementById('pen-'+mid)?.value||''):'';
   if(ko&&s1===s2&&!pen){toast('Select who wins on penalties','err');return;}
 
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
   // Optimistic update
   DB.preds=DB.preds.filter(p=>!(p.uid===me.id&&p.mid===mid));
   DB.preds.push({uid:me.id,mid,s1,s2,ts:Date.now(),pen});
