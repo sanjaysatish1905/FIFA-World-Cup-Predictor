@@ -145,6 +145,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
 .recent-hdr{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin:20px 0 12px}
 
 @media(max-width:380px){.tname{font-size:12px}.sinput{width:56px;height:48px;font-size:20px}}
+
+@keyframes rulesPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(1.3)}}
 </style>
 </head>
 <body>
@@ -153,7 +155,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
   <div class="hdr-title">🏆 FIFA WC 2026 Predictor</div>
   <div style="display:flex;align-items:center;gap:8px">
     <button class="hdr-icon-btn" onclick="openHelpModal()" title="How to Play">?</button>
-    <button class="hdr-icon-btn" onclick="openRulesModal()" title="Rule Changes">📢</button>
+    <button class="hdr-icon-btn" id="rulesBtn" style="position:relative" onclick="openRulesModal()" title="Rule Changes">📢<span id="rulesDot" style="display:none;position:absolute;top:2px;right:2px;width:9px;height:9px;border-radius:50%;background:var(--red);animation:rulesPulse 1.2s infinite"></span></button>
     <button class="user-chip" id="userChip" onclick="openUserModal()">
       <span id="chipName">Sign In</span>
     </button>
@@ -398,9 +400,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
     <div style="margin-top:14px;display:flex;flex-direction:column;gap:14px">
 
       <div style="background:var(--card2);border-radius:10px;padding:14px">
-        <div style="font-weight:700;color:var(--gold);font-size:13px;margin-bottom:8px">#1 Updated KO Scoring</div>
+        <div style="font-weight:700;color:var(--gold);font-size:13px;margin-bottom:8px">Updated KO Scoring</div>
         <div style="font-size:12px;color:var(--muted);line-height:1.8">
-          Group stage unchanged (5/4/3). All knockout rounds use:<br>
+          Group stage unchanged (5/4/3). For Knockout rounds, <span style="color:var(--accent);font-weight:700">Final Score is the Score after the full 90 mins or the Full Extra Time</span>, whichever comes later. Below are the points awarded:<br>
           <span style="color:var(--green);font-weight:700">Exact score: 6 pts</span> &nbsp;·&nbsp;
           <span style="color:var(--gold);font-weight:700">Correct Goal Difference: 4 pts</span> &nbsp;·&nbsp;
           <span style="color:var(--gold);font-weight:700">Correct result: 3 pts</span>
@@ -408,7 +410,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
       </div>
 
       <div style="background:var(--card2);border-radius:10px;padding:14px">
-        <div style="font-weight:700;color:var(--gold);font-size:13px;margin-bottom:8px">#2 Penalty Shootout Prediction</div>
+        <div style="font-weight:700;color:var(--gold);font-size:13px;margin-bottom:8px">Penalty Shootout Prediction</div>
         <div style="font-size:12px;color:var(--muted);line-height:1.8">
           In KO matches, if you predict a draw score, pick who wins on penalties.<br>
           Correct penalty winner = <span style="color:var(--accent);font-weight:700">+2 bonus pts</span>
@@ -416,14 +418,14 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
       </div>
 
       <div style="background:var(--card2);border-radius:10px;padding:14px">
-        <div style="font-weight:700;color:var(--gold);font-size:13px;margin-bottom:8px">#3 Tournament Predictions</div>
+        <div style="font-weight:700;color:var(--gold);font-size:13px;margin-bottom:8px">Tournament Predictions</div>
         <div style="font-size:12px;color:var(--muted);line-height:1.8">
           Predict the Champion, Runners-up, Golden Boot Winner &amp; Golden Glove Winner.<br><br>
-          <strong style="color:var(--text)">Window 1 Points</strong> (to close before start of R32):<br>
-          Champion 30 · Runners-up 18 · Golden Boot 15 · Golden Glove 15<br><br>
-          <strong style="color:var(--text)">Window 2 Points</strong> (to close before start of R16):<br>
-          Champion 15 · Runners-up 8 · Golden Boot 8 · Golden Glove 8<br><br>
-          If you lock-in your predictions during Window 1, you get Window 1 Points. If you add in predictions only in Window 2 or you change your Window 1 picks in Window 2, you earn Window 2 points. If your picks remain unchanged, you get Window 1 points.
+          <strong style="color:var(--text)">Window 1</strong> (closes before start of R32; choose from the 32 Teams left):<br>
+          <span style="color:var(--green);font-weight:700">Champion 30 · Runners-up 18 · Golden Boot 15 · Golden Glove 15</span><br><br>
+          <strong style="color:var(--text)">Window 2</strong> (closes before start of R16; choose from the 16 Teams left):<br>
+          <span style="color:var(--green);font-weight:700">Champion 15 · Runners-up 8 · Golden Boot 8 · Golden Glove 8</span><br><br>
+          <span style="color:var(--text)">If you lock-in your predictions during Window 1, you get Window 1 Points.<br>If you add in predictions only in Window 2 or you change your Window 1 picks in Window 2, you earn Window 2 points.<br>If your picks remain unchanged, you get Window 1 points.</span>
         </div>
       </div>
 
@@ -551,7 +553,7 @@ const MATCHES=[
  {id:'M67',ist:'2026-06-28T02:30',group:'Group L',t1:'Panama',           t2:'England'},
  {id:'M68',ist:'2026-06-28T02:30',group:'Group L',t1:'Croatia',          t2:'Ghana'},
  {id:'M69',ist:'2026-06-28T05:00',group:'Group K',t1:'Colombia',         t2:'Portugal'},
- {id:'M70',ist:'2026-06-28T05:12',group:'Group K',t1:'DR Congo',         t2:'Uzbekistan'},
+ {id:'M70',ist:'2026-06-28T05:00',group:'Group K',t1:'DR Congo',         t2:'Uzbekistan'},
  {id:'M71',ist:'2026-06-28T07:30',group:'Group J',t1:'Algeria',          t2:'Austria'},
  {id:'M72',ist:'2026-06-28T07:30',group:'Group J',t1:'Jordan',           t2:'Argentina'},
 ];
@@ -560,6 +562,14 @@ const MATCHES=[
 //  CONFIGURATION — paste your Apps Script Web App URL here
 // ═══════════════════════════════════════════════
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHQ-UvPvyhIHgN3tYbSSV98bwb0RPxYEJLfqSxkKaeXDiFjyBuA7W8sjpzFi8D6Mq8GA/exec';
+
+// Bump this (and the matching value in version.json) on every deploy —
+// open tabs auto-reload within ~30s of detecting a mismatch, so players never need a hard refresh.
+const APP_VERSION = '1';
+
+// Bump this whenever the Rule Changes modal content changes — players who haven't
+// dismissed the latest version see a pulsing red dot on the megaphone icon.
+const RULES_VERSION = '1';
 
 // ═══════════════════════════════════════════════
 //  IN-MEMORY DATABASE (synced from Google Sheets)
@@ -609,7 +619,19 @@ function startAutoRefresh() {
   _refreshTimer = setInterval(async () => {
     const ok = await loadAll(true);
     if (ok) refreshCurrentPage();
+    checkForUpdate();
   }, 30000);
+}
+
+async function checkForUpdate() {
+  try {
+    const res = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
+    const data = await res.json();
+    if (data.version && data.version !== APP_VERSION) {
+      toast('Update available — refreshing…', 'ok');
+      setTimeout(() => location.reload(), 1500);
+    }
+  } catch (e) {}
 }
 
 function refreshCurrentPage() {
@@ -1521,6 +1543,13 @@ function openHelpModal(){
 }
 function openRulesModal(){
   document.getElementById('rulesModal').classList.add('open');
+  localStorage.setItem('wc_rules_seen', RULES_VERSION);
+  updateRulesDot();
+}
+
+function updateRulesDot(){
+  const seen=localStorage.getItem('wc_rules_seen');
+  document.getElementById('rulesDot').style.display=(seen===RULES_VERSION)?'none':'block';
 }
 
 const TOURN_FIELDS=[
@@ -1531,6 +1560,15 @@ const TOURN_FIELDS=[
 ];
 const TOURN_W1_PTS={champion:30,runners_up:18,golden_boot:15,golden_glove:15};
 const TOURN_W2_PTS={champion:15,runners_up:8, golden_boot:8, golden_glove:8};
+
+function fmtCfgTime(s){
+  if(!s)return'';
+  const d=parseIST(s);
+  const ist=new Date(d.getTime()+5.5*3600000);
+  const day=ist.getUTCDate(),month=ist.toLocaleDateString('en-IN',{month:'short',timeZone:'UTC'});
+  const hh=ist.getUTCHours().toString().padStart(2,'0'),mm=ist.getUTCMinutes().toString().padStart(2,'0');
+  return`${day} ${month}, ${hh}:${mm} IST`;
+}
 
 function getTournWindowState(){
   const cfg=DB.tournCfg;
@@ -1554,9 +1592,13 @@ function _tournOpts(type,sel){
 }
 
 function _tournForm(windowNum,prefill){
+  const ptsMap=windowNum===2?TOURN_W2_PTS:TOURN_W1_PTS;
   return TOURN_FIELDS.map(f=>`
     <div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:3px">${f.label}</div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+        <span style="font-size:11px;color:var(--muted)">${f.label}</span>
+        <span style="font-size:11px;color:var(--accent);font-weight:700">${ptsMap[f.key]} pts</span>
+      </div>
       <select id="tp-${f.key}" style="width:100%;padding:8px;border-radius:8px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:13px;appearance:auto">
         ${_tournOpts(f.opts,prefill?prefill[f.key]:'')}
       </select>
@@ -1588,6 +1630,7 @@ function renderTournCard(){
   const el=document.getElementById('tournCard');
   if(!el)return;
   const me=getMe();
+  const cfg=DB.tournCfg;
   const state=getTournWindowState();
   const myW1=me?DB.tournPreds.find(p=>p.uid===me.id&&p.window==='1'):null;
   const myW2=me?DB.tournPreds.find(p=>p.uid===me.id&&p.window==='2'):null;
@@ -1595,14 +1638,16 @@ function renderTournCard(){
   const ghostRows=`<div style="display:flex;flex-direction:column;gap:10px;opacity:0.4;pointer-events:none">${TOURN_FIELDS.map(f=>`<div style="display:flex;justify-content:space-between;font-size:12px"><span>${f.label}</span><span style="color:var(--muted)">— —</span></div>`).join('')}</div>`;
 
   if(state==='coming_soon'){
+    const opensLine=cfg.w1_open?`Opens <strong>${fmtCfgTime(cfg.w1_open)}</strong>`:'Opens for Predictions soon';
     el.innerHTML=title+ghostRows+`
       <div style="margin-top:12px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--gold);text-align:center;line-height:1.6">
-        ⏳ Opens for Predictions soon<br><span style="color:var(--muted)">click 📢 for details</span></div>`;
+        ⏳ ${opensLine}<br><span style="color:var(--muted)">click 📢 for details</span></div>`;
     return;
   }
 
   if(state==='between_windows'){
-    el.innerHTML=title+(myW1?_tournSubmittedHtml(myW1,null):`<div style="font-size:12px;color:var(--muted);text-align:center;padding:16px">Window 1 closed. Window 2 opens soon.</div>`);
+    const opensLine=cfg.w2_open?`Window 2 opens <strong>${fmtCfgTime(cfg.w2_open)}</strong>`:'Window 2 opens soon';
+    el.innerHTML=title+(myW1?_tournSubmittedHtml(myW1,null):`<div style="font-size:12px;color:var(--muted);text-align:center;padding:16px">Window 1 closed. ${opensLine}.</div>`);
     return;
   }
 
@@ -1612,14 +1657,15 @@ function renderTournCard(){
   }
 
   if(state==='w1_open'){
+    const closesLine=cfg.w1_close?` · closes <strong>${fmtCfgTime(cfg.w1_close)}</strong>`:'';
     if(!me){
       el.innerHTML=title+ghostRows+`<div style="margin-top:10px;font-size:12px;text-align:center;color:var(--muted)"><a href="#" onclick="openUserModal();return false" style="color:var(--accent)">Sign in</a> to submit</div>
-        <div style="margin-top:8px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open · 30/18/15/15 pts</div>`;
+        <div style="margin-top:8px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open · 30/18/15/15 pts${closesLine}</div>`;
       return;
     }
     const lastSaved=myW1?`<div style="font-size:11px;color:var(--muted);text-align:right;margin-bottom:6px">Last saved: ${new Date(myW1.ts).toLocaleString('en-IN',{dateStyle:'short',timeStyle:'short'})}</div>`:'';
     el.innerHTML=title+`
-      <div style="margin-bottom:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open · 30/18/15/15 pts · editable until window closes</div>
+      <div style="margin-bottom:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open${closesLine}</div>
       ${lastSaved}
       <div style="display:flex;flex-direction:column;gap:8px">${_tournForm(1,myW1)}</div>
       <button class="btn btn-primary" style="margin-top:12px;font-size:13px;padding:10px" onclick="submitTournPred(1)">${myW1?'Update':'Submit'} Window 1 Predictions</button>`;
@@ -1627,9 +1673,10 @@ function renderTournCard(){
   }
 
   if(state==='w2_open'){
+    const closesLine=cfg.w2_close?` · closes <strong>${fmtCfgTime(cfg.w2_close)}</strong>`:'';
     if(!me){
       el.innerHTML=title+(myW1?_tournSubmittedHtml(myW1,null):ghostRows)+`
-        <div style="margin-top:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold);text-align:center">🟡 Window 2 open · 15/8/8/8 pts</div>`;
+        <div style="margin-top:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold);text-align:center">🟡 Window 2 open · 15/8/8/8 pts${closesLine}</div>`;
       return;
     }
     const prefill=myW2||myW1;
@@ -1640,7 +1687,7 @@ function renderTournCard(){
         ${TOURN_FIELDS.map(f=>`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:var(--muted)">${f.label}</span><span style="font-weight:600">${myW1[f.key]||'—'}</span></div>`).join('')}
       </div>`:'';
     el.innerHTML=title+w1summary+`
-      <div style="margin-bottom:10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold);text-align:center">🟡 Window 2 open · changed picks get reduced pts · 15/8/8/8 pts</div>
+      <div style="margin-bottom:10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold);text-align:center">🟡 Window 2 open · changed picks get reduced pts${closesLine}</div>
       ${lastSaved}
       <div style="display:flex;flex-direction:column;gap:8px">${_tournForm(2,prefill)}</div>
       <button class="btn btn-primary" style="margin-top:12px;font-size:13px;padding:10px" onclick="submitTournPred(2)">${myW2?'Update':'Submit'} Window 2 Predictions</button>`;
@@ -1773,6 +1820,7 @@ function toast(msg,type=''){
 //  INIT
 // ═══════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
+  updateRulesDot();
   if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
     showLoading(true, '⚙️ Set SCRIPT_URL in index.html to connect Google Sheets');
     return;
