@@ -341,6 +341,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
         <div class="pts-row"><span>Exact score</span><span style="color:var(--green);font-weight:700">6 pts</span></div>
         <div class="pts-row"><span>Correct result + goal difference</span><span style="color:var(--gold);font-weight:700">4 pts</span></div>
         <div class="pts-row"><span>Correct result only</span><span style="color:var(--gold);font-weight:700">3 pts</span></div>
+        <div class="pts-row"><span>Correct Advancing Team (right team goes through, wrong mechanism)</span><span style="color:var(--gold);font-weight:700">3 pts</span></div>
         <div class="pts-row"><span>Correct penalty winner (on drawn predictions)</span><span style="color:var(--accent);font-weight:700">+2 pts</span></div>
         <div class="pts-row"><span>Wrong prediction</span><span style="color:var(--muted);font-weight:700">0 pts</span></div>
       </div>
@@ -384,6 +385,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
       <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Exact score</span><span style="color:var(--green);font-weight:700">6 pts</span></div>
       <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Correct result + goal difference</span><span style="color:var(--gold);font-weight:700">4 pts</span></div>
       <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Correct result only</span><span style="color:var(--gold);font-weight:700">3 pts</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Correct Advancing Team (right team, wrong mechanism)</span><span style="color:var(--gold);font-weight:700">3 pts</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Wrong prediction</span><span style="color:var(--muted);font-weight:700">0 pts</span></div>
       <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Predicted draw + correct penalty winner</span><span style="color:var(--accent);font-weight:700">+2 pts</span></div>
     </div>
     <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px;font-size:11px;color:var(--muted);line-height:1.8">
@@ -407,6 +410,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow','DIN Pro','FF D
           <span style="color:var(--green);font-weight:700">Exact score: 6 pts</span> &nbsp;·&nbsp;
           <span style="color:var(--gold);font-weight:700">Correct Goal Difference: 4 pts</span> &nbsp;·&nbsp;
           <span style="color:var(--gold);font-weight:700">Correct result: 3 pts</span>
+        </div>
+      </div>
+
+      <div style="background:var(--card2);border-radius:10px;padding:14px">
+        <div style="font-weight:700;color:var(--gold);font-size:13px;margin-bottom:8px">Correct Advancing Team</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.8">
+          New for Knockout rounds: if you correctly pick the team that goes through — even if you got the mechanism wrong (you predicted a regulation win and it actually went to penalties, or you predicted a draw + penalty winner and it actually won outright) — you still score <span style="color:var(--gold);font-weight:700">3 pts</span>.
         </div>
       </div>
 
@@ -566,17 +576,18 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHQ-UvPvyhIHgN3tYbS
 
 // Bump this (and the matching value in version.json) on every deploy —
 // open tabs auto-reload within ~30s of detecting a mismatch, so players never need a hard refresh.
-const APP_VERSION = '2';
+const APP_VERSION = '4';
 
 // Bump this whenever the Rule Changes modal content changes — players who haven't
 // dismissed the latest version see a pulsing red dot on the megaphone icon.
-const RULES_VERSION = '1';
+const RULES_VERSION = '2';
 
 // ═══════════════════════════════════════════════
 //  IN-MEMORY DATABASE (synced from Google Sheets)
 // ═══════════════════════════════════════════════
-let DB = {users:[], preds:[], results:{}, custom:[], tournOptions:[], tournPreds:[], tournCfg:{}};
+let DB = {users:[], preds:[], results:{}, custom:[], tournOptions:[], tournPreds:[], tournCfg:{}, dataVersion:'0'};
 let _refreshTimer = null;
+let _lastDataVersion = null;
 
 async function apiCall(params) {
   const qs = Object.entries(params)
@@ -600,6 +611,7 @@ async function loadAll(silent) {
     DB.tournOptions = (data.tournOptions || []).map(o => ({type:String(o.type), value:String(o.value)}));
     DB.tournPreds   = (data.tournPreds  || []).map(p => ({uid:String(p.uid), champion:String(p.champion), runners_up:String(p.runners_up), golden_boot:String(p.golden_boot), golden_glove:String(p.golden_glove), window:String(p.window), ts:String(p.ts)}));
     DB.tournCfg     = data.tournCfg || {};
+    DB.dataVersion  = String(data.dataVersion || '0');
     return true;
   } catch(e) {
     if (!silent) toast('Failed to load: ' + e.message, 'err');
@@ -618,8 +630,13 @@ function showLoading(show, msg) {
 function startAutoRefresh() {
   clearInterval(_refreshTimer);
   _refreshTimer = setInterval(async () => {
-    const ok = await loadAll(true);
-    if (ok) refreshCurrentPage();
+    try {
+      const v = await apiCall({action:'getVersion'});
+      if (v.version !== _lastDataVersion) {
+        const ok = await loadAll(true);
+        if (ok) { _lastDataVersion = DB.dataVersion; refreshCurrentPage(); }
+      }
+    } catch (e) { /* skip this cycle on transient network errors */ }
     checkForUpdate();
   }, 30000);
 }
@@ -637,7 +654,7 @@ async function checkForUpdate() {
 
 function refreshCurrentPage() {
   if (curPage === 'home')        renderHome();
-  if (curPage === 'predict')     renderPredict();
+  if (curPage === 'predict' && dirtyMatches.size === 0) renderPredict();
   if (curPage === 'leaderboard') renderLB(lbSort);
   if (curPage === 'admin' && adminOpen) { renderAdminResults(); renderCustomMatches(); renderPlayers(); }
 }
@@ -705,7 +722,7 @@ function fmtDate(m){
 
 const KO_ROUNDS=new Set(['R32','R16','QF','SF','F']);
 
-function calcPts(pred,res,isKO){
+function calcPts(pred,res,isKO,t1,t2){
   if(!res)return null;
   const{s1:p1,s2:p2}=pred,{s1:a1,s2:a2}=res;
   const exactScore=p1===a1&&p2===a2;
@@ -715,9 +732,18 @@ function calcPts(pred,res,isKO){
   // Penalty bonus: only when actual is draw AND player predicted draw
   const penBonus=(isKO&&a1===a2&&p1===p2&&pred.pen&&res.pen&&pred.pen===res.pen)?2:0;
   if(exactScore) return(isKO?6:5)+penBonus;
-  if(!correctResult)return 0;
-  if(correctGD)return 4+penBonus;
-  return 3;
+  if(correctResult){
+    if(correctGD)return 4+penBonus;
+    return 3;
+  }
+  // Wrong result type (predicted win/loss vs actual draw, or vice versa) —
+  // still award credit if the team that actually advances matches the team you backed.
+  if(isKO&&t1&&t2){
+    const predictedWinner=pr===1?t1:pr===-1?t2:(pred.pen||null);
+    const actualWinner=ar===1?t1:ar===-1?t2:(res.pen||null);
+    if(predictedWinner&&actualWinner&&predictedWinner===actualWinner)return 3;
+  }
+  return 0;
 }
 
 function calcTournPts(uid){
@@ -755,7 +781,7 @@ function calcLB(){
       const r=res[p.mid];if(!r)return;
       const m=matches.find(mx=>mx.id===p.mid);
       const ko=m?KO_ROUNDS.has(m.group):false;
-      const v=calcPts(p,r,ko);if(v===null)return;
+      const v=calcPts(p,r,ko,m?.t1,m?.t2);if(v===null)return;
       scored++;pts+=v;
       if(v===5||v===6)exact++;
       if(v===4||v===5||v===6)differential++;
@@ -860,7 +886,7 @@ function matchCard(m,me,preds,res,isRecent=false){
   const ko=KO_ROUNDS.has(m.group);
   const myPred=me?preds.find(p=>p.uid===me.id&&p.mid===m.id):null;
   const result=res[m.id];
-  const pts=myPred&&result!=null?calcPts(myPred,result,ko):null;
+  const pts=myPred&&result!=null?calcPts(myPred,result,ko,m.t1,m.t2):null;
 
   const lockTag=locked?`<span class="lock-badge">🔒 Locked</span>`:'';
 
@@ -893,7 +919,7 @@ function matchCard(m,me,preds,res,isRecent=false){
   const penRow=showPenRow?`
     <div id="pen-row-${m.id}" style="display:${initDraw?'block':'none'};margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
       <div style="font-size:12px;color:var(--muted);margin-bottom:6px">🥅 Who wins on penalties?</div>
-      <select id="pen-${m.id}" style="width:100%;padding:10px;border-radius:8px;background:var(--card2);border:2px solid var(--border);color:var(--text);font-size:14px;text-align:center">
+      <select id="pen-${m.id}" onchange="markMatchDirty('${m.id}')" style="width:100%;padding:10px;border-radius:8px;background:var(--card2);border:2px solid var(--border);color:var(--text);font-size:14px;text-align:center">
         <option value="">— Select winner —</option>
         <option value="${m.t1}">${m.t1}</option>
         <option value="${m.t2}">${m.t2}</option>
@@ -907,7 +933,7 @@ function matchCard(m,me,preds,res,isRecent=false){
     resultBox=`<div class="result-box">⚽ Final: ${m.t1} <strong>${result.s1}–${result.s2}</strong> ${m.t2}${penInfo}</div>`;
   }
 
-  const oninput=showPenRow?`oninput="checkPenDraw('${m.id}')"` :'';
+  const oninput=`oninput="markMatchDirty('${m.id}');${showPenRow?`checkPenDraw('${m.id}')`:''}"`;
 
   return`<div class="mcard${locked?' locked':''}" id="mc-${m.id}">
     <div class="mcard-hdr">
@@ -957,7 +983,7 @@ function renderPicks(){
     const ko=KO_ROUNDS.has(m.group);
     const rows=users.map(u=>{
       const p=preds.find(x=>x.uid===u.id&&x.mid===m.id);
-      const pts=p&&result!=null?calcPts(p,result,ko):null;
+      const pts=p&&result!=null?calcPts(p,result,ko,m.t1,m.t2):null;
       const isMe=me?.id===u.id;
       let ptsBadge='';
       if(pts!==null){
@@ -1216,6 +1242,14 @@ async function delTournOpt(type,value){
 // ═══════════════════════════════════════════════
 let curPage='home', lbSort='pts', adminOpen=false, _pinTarget=null;
 
+// Tracks in-progress, unsaved edits so the 30s auto-refresh doesn't wipe them mid-entry.
+const dirtyMatches=new Set();
+let tournFormDirty=false;
+function markMatchDirty(mid){ dirtyMatches.add(mid); }
+function clearMatchDirty(mid){ dirtyMatches.delete(mid); }
+function markTournDirty(){ tournFormDirty=true; }
+function clearTournDirty(){ tournFormDirty=false; }
+
 function nav(p){
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.nbtn').forEach(x=>x.classList.remove('active'));
@@ -1326,7 +1360,7 @@ function renderHeatmap(){
       const p=preds.find(x=>x.uid===u.id&&x.mid===m.id);
       if(!p) return`<td style="${cellBase}background:rgba(255,255,255,0.03);color:var(--muted)">—</td>`;
       if(!result) return`<td style="${cellBase}background:rgba(59,130,246,0.1);color:var(--accent);cursor:pointer" onclick="showHeatmapTip(this,'${u.name}','${m.t1} v ${m.t2}','${p.s1}–${p.s2}','pending')">•</td>`;
-      const pts=calcPts(p,result,ko);
+      const pts=calcPts(p,result,ko,m.t1,m.t2);
       return`<td style="${cellBase}${cellStyle(pts,true,true)};cursor:pointer" onclick="showHeatmapTip(this,'${u.name}','${m.t1} v ${m.t2}','${p.s1}–${p.s2}','${pts}pts')">${pts}</td>`;
     }).join('');
     return`<tr><td style="${matchHdBase}border-right:1px solid var(--border)">${matchLabel}</td>${cells}</tr>`;
@@ -1389,6 +1423,7 @@ async function submitPred(mid){
   if(ko&&s1===s2&&!pen){toast('Select who wins on penalties','err');return;}
 
   if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  clearMatchDirty(mid);
   // Optimistic update
   DB.preds=DB.preds.filter(p=>!(p.uid===me.id&&p.mid===mid));
   DB.preds.push({uid:me.id,mid,s1,s2,ts:Date.now(),pen});
@@ -1620,7 +1655,7 @@ function _tournForm(windowNum,prefill){
         <span style="font-size:11px;color:var(--muted)">${f.label}</span>
         <span style="font-size:11px;color:var(--accent);font-weight:700">${ptsMap[f.key]} pts</span>
       </div>
-      <select id="tp-${f.key}" style="width:100%;padding:8px;border-radius:8px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:13px;appearance:auto">
+      <select id="tp-${f.key}" onchange="markTournDirty()" style="width:100%;padding:8px;border-radius:8px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:13px;appearance:auto">
         ${_tournOpts(f.opts,prefill?prefill[f.key]:'')}
       </select>
     </div>`).join('');
@@ -1684,6 +1719,7 @@ function renderTournCard(){
         <div style="margin-top:8px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open · 30/18/15/15 pts${closesLine}</div>`;
       return;
     }
+    if(tournFormDirty)return; // user is mid-edit — don't blow away their unsaved selections
     const lastSaved=myW1?`<div style="font-size:11px;color:var(--muted);text-align:right;margin-bottom:6px">Last saved: ${new Date(myW1.ts).toLocaleString('en-IN',{dateStyle:'short',timeStyle:'short'})}</div>`:'';
     el.innerHTML=title+`
       <div style="margin-bottom:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--green);text-align:center">🟢 Window 1 open${closesLine}</div>
@@ -1700,6 +1736,7 @@ function renderTournCard(){
         <div style="margin-top:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--gold);text-align:center">🟡 Window 2 open · 15/8/8/8 pts${closesLine}</div>`;
       return;
     }
+    if(tournFormDirty)return; // user is mid-edit — don't blow away their unsaved selections
     const prefill=myW2||myW1;
     const lastSaved=myW2?`<div style="font-size:11px;color:var(--muted);text-align:right;margin-bottom:6px">Last saved: ${new Date(myW2.ts).toLocaleString('en-IN',{dateStyle:'short',timeStyle:'short'})}</div>`:'';
     const w1summary=myW1?`
@@ -1726,6 +1763,7 @@ async function submitTournPred(windowNum){
   }
   const ts=new Date().toISOString();
   const w=String(windowNum);
+  clearTournDirty();
   DB.tournPreds=DB.tournPreds.filter(p=>!(p.uid===me.id&&p.window===w));
   DB.tournPreds.push({uid:me.id,...vals,window:w,ts});
   renderTournCard();
@@ -1849,6 +1887,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderTournCard();
   const ok = await loadAll(false);
   if (ok) {
+    _lastDataVersion = DB.dataVersion;
     updateChip();
     renderHome();
     renderTournCard();
